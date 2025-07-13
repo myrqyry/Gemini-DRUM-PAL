@@ -1,0 +1,6 @@
+{
+  "name": "Imaginary 90s drum keychain",
+  "description": "An interactive drum pad where each sound is configurable via natural language prompts using the Gemini API and Tone.js for audio synthesis, and a deeply nostalgic 1993 digital keychain interface, think tamagotchi meets speak-and-spell",
+  "requestFramePermissions": [],
+  "prompt": ""
+}

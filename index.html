@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Imaginary 90s Drum Keychain</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background-color: #374151; /* bg-gray-700 */
+      color: #f3f4f6; /* text-gray-100 */
+      font-family: 'VT323', monospace;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    .lcd-screen-bg {
+       background-color: #c4d1b8; /* Classic LCD green */
+       background-image:
+        linear-gradient(rgba(0,0,0,0.1) 50%, transparent 50%),
+        linear-gradient(90deg, rgba(0,0,0,0.1) 50%, transparent 50%);
+       background-size: 3px 3px;
+       box-shadow: inset 2px 2px 5px rgba(0,0,0,0.3);
+    }
+    .keychain-body.transparent-mode {
+        /* background-color is now set via inline style for color tinting */
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
+        border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+    .lcd-pixel {
+      background-color: #3f4738; /* A dark green/black for the pixels */
+    }
+
+    .text-inset-light {
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6);
+    }
+    .text-inset-dark {
+      text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.4);
+    }
+
+    /* Animation Keyframes */
+    @keyframes kick-pulse {
+      0%, 100% { transform: scale(0.2); opacity: 0.5; }
+      50% { transform: scale(1); opacity: 1; }
+    }
+    .kick-anim { animation: kick-pulse 0.4s ease-in-out; }
+
+    @keyframes snare-flash {
+      0%, 100% { opacity: 0; }
+      50% { opacity: 1; }
+    }
+    .snare-anim-pixel { animation: snare-flash 0.1s steps(1, end) infinite; }
+    
+    @keyframes tom-pulse {
+      0%, 100% { transform: scale(0.8); opacity: 0.7; }
+      50% { transform: scale(1); opacity: 1; }
+    }
+    .tom-anim { animation: tom-pulse 0.3s ease-in-out; }
+    
+    @keyframes clap-in {
+      from { transform: translateX(-20px); }
+      to { transform: translateX(0); }
+    }
+    .clap-anim-right { animation: clap-in 0.15s ease-out reverse; }
+    .clap-anim-left { animation: clap-in 0.15s ease-out; }
+
+    @keyframes hihat-tick {
+      0%, 100% { transform: scaleY(1); }
+      50% { transform: scaleY(0.1); }
+    }
+    .hihat-closed-anim { animation: hihat-tick 0.15s ease-in-out; }
+
+    @keyframes hihat-open-shimmer {
+      0% { transform: scaleY(0.1); opacity: 1; }
+      50% { transform: scaleY(1); opacity: 1; }
+      100% { transform: scaleY(1); opacity: 0; }
+    }
+    .hihat-open-anim { animation: hihat-open-shimmer 0.5s ease-out; }
+    
+    @keyframes crash-burst {
+      0% { transform: scale(0) rotate(0deg); opacity: 1; }
+      100% { transform: scale(1.2) rotate(45deg); opacity: 0; }
+    }
+    .crash-anim-line { animation: crash-burst 0.6s ease-out; }
+
+    @keyframes fx-zap {
+      0% { transform: translateX(-100%) skewX(-45deg); }
+      100% { transform: translateX(100%) skewX(-45deg); }
+    }
+    .fx-anim { animation: fx-zap 0.3s ease-in; }
+
+    /* Boot Animation */
+    @keyframes logo-drop {
+      from { transform: translateY(-80px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .boot-logo-anim { 
+      animation: logo-drop 1s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; 
+    }
+
+    @keyframes text-fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .boot-text-anim { 
+      opacity: 0; /* Start hidden */
+      animation: text-fade-in 1s ease-out 0.8s forwards; /* Delay start */
+    }
+
+  </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@19.1.0",
+    "react/": "https://esm.sh/react@19.1.0/",
+    "tone": "https://esm.sh/tone@15.1.22",
+    "@google/genai": "https://esm.sh/@google/genai@1.5.1",
+    "react-dom/": "https://esm.sh/react-dom@19.1.0/"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
