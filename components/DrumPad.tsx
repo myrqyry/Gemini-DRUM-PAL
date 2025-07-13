@@ -13,6 +13,11 @@ interface DrumPadProps {
 }
 
 const DrumPad: React.FC<DrumPadProps> = ({ padConfig, onClick, isSelected, disabled, isTransparent, textColor, textInsetClass, isKeyPressed }) => {
+=======
+}
+
+const DrumPad: React.FC<DrumPadProps> = ({ padConfig, onClick, isSelected, disabled, isTransparent, textColor, textInsetClass }) => {
+>>>>>>> f5c1c2c0f346e8c52a93d223bc342eedff6c6018
   const { id, name, color, isLoading, error } = padConfig;
 
   // Made button smaller to fit within a more compact layout

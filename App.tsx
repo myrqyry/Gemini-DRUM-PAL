@@ -124,6 +124,7 @@ const App: React.FC = () => {
     }
   }, [appState, isApiKeyMissing, pads, handleGenerateSound]);
   
+<<<<<<< HEAD
   const triggerPad = useCallback((padId: string): boolean => {
       const pad = pads.find(p => p.id === padId);
       if (!pad || !pad.toneJsConfig) {
@@ -168,6 +169,8 @@ const App: React.FC = () => {
   }, [appState, triggerPad]);
 
 
+=======
+>>>>>>> f5c1c2c0f346e8c52a93d223bc342eedff6c6018
   const handlePadClick = async (padId: string) => {
     if (activeAnimation || appState === 'BOOTING' || appState === 'OFF' || appState === 'GENERATING') return;
     
@@ -180,6 +183,7 @@ const App: React.FC = () => {
       setAppState('EDITING_PAD');
     } else if (appState === 'EDITING_PAD') {
       if (padId === selectedPadId) {
+<<<<<<< HEAD
         handleGenerateSound(padId, promptInputValue);
       } else {
         triggerPad(padId);
@@ -188,6 +192,22 @@ const App: React.FC = () => {
       const success = triggerPad(padId);
       if (!success && !pad.isLoading) {
         setLcdMessage(`${pad.name} NOT READY!`);
+=======
+        // Click the same pad again to generate
+        handleGenerateSound(padId, promptInputValue);
+      }
+    } else if (appState === 'IDLE' || appState === 'ERROR') {
+      if (pad?.toneJsConfig) {
+        playSound(pad.toneJsConfig);
+        setPads(prev => prev.map(p => p.id === padId ? { ...p, error: undefined } : p));
+        const animationType = PAD_ANIMATION_MAP[pad.id];
+        if (animationType) {
+          setActiveAnimation(animationType);
+          setTimeout(() => setActiveAnimation(null), 700);
+        }
+      } else if (!pad?.isLoading) {
+        setLcdMessage(`${pad?.name} NOT READY!`);
+>>>>>>> f5c1c2c0f346e8c52a93d223bc342eedff6c6018
         setTimeout(() => setLcdMessage(WELCOME_MESSAGE), 1500);
       }
     }
@@ -291,7 +311,10 @@ const App: React.FC = () => {
                       isTransparent={isTransparent}
                       textColor={currentShell.textColor}
                       textInsetClass={textInsetClass}
+<<<<<<< HEAD
                       isKeyPressed={!!hotPads[pad.id]}
+=======
+>>>>>>> f5c1c2c0f346e8c52a93d223bc342eedff6c6018
                   />
               );
             })}
@@ -308,4 +331,8 @@ const App: React.FC = () => {
   );
 };
 
+<<<<<<< HEAD
 export default App;
+=======
+export default App;
+>>>>>>> f5c1c2c0f346e8c52a93d223bc342eedff6c6018
