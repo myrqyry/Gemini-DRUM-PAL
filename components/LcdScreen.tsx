@@ -21,13 +21,20 @@ interface LcdScreenProps {
   stickerUrlInput: string;
   onStickerUrlChange: (value: string) => void;
   onStickerUrlSubmit: () => void;
+  stickerRotation: number;
+  stickerScale: number;
+  onStickerTransformChange: (rotation: number, scale: number) => void;
+  soundModel: string;
+  onSoundModelChange: (model: string) => void;
 }
 
 const LcdScreen: React.FC<LcdScreenProps> = (props) => {
   const { 
     appState, message, promptValue, onPromptChange, activeAnimation, 
     selectedPadName, onCycleColor, onToggleStyle, currentColorName, isTransparent,
-    stickerUrlInput, onStickerUrlChange, onStickerUrlSubmit
+    stickerUrlInput, onStickerUrlChange, onStickerUrlSubmit,
+    stickerRotation, stickerScale, onStickerTransformChange,
+    soundModel, onSoundModelChange
   } = props;
   const AnimationComponent = activeAnimation ? Animations[activeAnimation as keyof typeof Animations] : null;
 
@@ -52,6 +59,10 @@ const LcdScreen: React.FC<LcdScreenProps> = (props) => {
                   placeholder="http://..."
                   autoFocus
                 />
+                <div className="flex w-full space-x-2">
+                    <input type="range" min="0" max="360" value={stickerRotation} onChange={(e) => onStickerTransformChange(Number(e.target.value), stickerScale)} className="w-1/2"/>
+                    <input type="range" min="0.5" max="1.5" step="0.1" value={stickerScale} onChange={(e) => onStickerTransformChange(stickerRotation, Number(e.target.value))} className="w-1/2"/>
+                </div>
                 <button onClick={onStickerUrlSubmit} className="text-lg hover:bg-green-900/10 rounded px-2 py-1">
                     APPLY STICKER
                 </button>
@@ -71,6 +82,9 @@ const LcdScreen: React.FC<LcdScreenProps> = (props) => {
                         STYLE: {isTransparent ? 'CLEAR' : 'SOLID'}
                     </button>
                 </div>
+                <button onClick={() => onSoundModelChange(soundModel === 'DEFAULT' ? 'EXPERIMENTAL' : 'DEFAULT')} className="text-center hover:bg-green-900/10 rounded px-1 w-full mt-2">
+                    SOUND MODEL: {soundModel}
+                </button>
             </div>
         )
     }

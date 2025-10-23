@@ -90,6 +90,17 @@ export const PAD_ANIMATION_MAP: { [key: string]: string } = {
 };
 
 
-export const GEMINI_MODEL_NAME = 'gemini-2.5-flash';
+export const GEMINI_MODEL_NAME = 'gemini-1.5-flash';
+export const GEMINI_MODEL_NAME_EXPERIMENTAL = 'gemini-1.5-pro';
 
 export const WELCOME_MESSAGE = 'GEMINI\nDRUM-PAL';
+
+export const METRONOME_TICK_CONFIG = {
+  instrument: 'Synth',
+  options: {
+    oscillator: { type: 'sine' },
+    envelope: { attack: 0.001, decay: 0.05, sustain: 0, release: 0.1 }
+  },
+  duration: '32n',
+  note: 'C8'
+};
