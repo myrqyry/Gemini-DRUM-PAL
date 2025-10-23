@@ -61,7 +61,7 @@ export const getSoundConfigFromPrompt = async (userPrompt: string, modelName: st
     
     const parsedConfig = response.parsed as ToneJsSoundConfig;
 
-    if (!parsedConfig || !parsedConfig.instrument || !parsedConfig.options) {
+    if (!parsedConfig || !parsedConfig.instrument || typeof parsedConfig.options !== 'object' || parsedConfig.options === null) {
         console.error("Parsed config is missing instrument or options:", parsedConfig);
         return null;
     }
