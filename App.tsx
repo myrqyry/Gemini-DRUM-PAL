@@ -23,8 +23,44 @@ const KEY_TO_PAD_MAP: { [key: string]: string } = {
     ' ': 'kick', // Space key
 };
 
+const getPadsFromHash = (): PadConfig[] => {
+  if (typeof window !== 'undefined' && window.location.hash) {
+    try {
+      const hash = window.location.hash.substring(1);
+      if (!/^[A-Za-z0-9+/=]+$/.test(hash)) {
+          throw new Error("Invalid base64 string in hash");
+      }
+      const decoded = atob(hash);
+      const parsed = JSON.parse(decoded) as { id: string; p: string }[];
+
+      if (Array.isArray(parsed)) {
+        const padsFromHash: Record<string, string> = parsed.reduce((acc, item) => {
+          if (item.id && typeof item.p === 'string') {
+            acc[item.id] = item.p;
+          }
+          return acc;
+        }, {} as Record<string, string>);
+
+        return INITIAL_PADS.map(pad => {
+          const prompt = padsFromHash[pad.id];
+          if (prompt) {
+            return { ...pad, soundPrompt: prompt, toneJsConfig: undefined, isLoading: false, error: undefined };
+          }
+          return pad;
+        });
+      }
+    } catch (error) {
+      console.error("Failed to parse sound kit from URL hash:", error);
+       if (window.history.pushState) {
+          window.history.pushState("", document.title, window.location.pathname + window.location.search);
+      }
+    }
+  }
+  return INITIAL_PADS;
+};
+
 const App: React.FC = () => {
-  const [pads, setPads] = useState<PadConfig[]>(INITIAL_PADS);
+  const [pads, setPads] = useState<PadConfig[]>(getPadsFromHash());
   const [appState, setAppState] = useState<AppState>('OFF');
   const [lcdMessage, setLcdMessage] = useState('');
   const [selectedPadId, setSelectedPadId] = useState<string | null>(null);
@@ -40,6 +76,11 @@ const App: React.FC = () => {
   const [stickerUrl, setStickerUrl] = useState<string | null>(null);
   const [stickerClickCount, setStickerClickCount] = useState(0);
   const [stickerUrlInput, setStickerUrlInput] = useState('');
+
+  type RecordingState = 'RECORDING' | 'PLAYING' | 'STOPPED';
+  const [recordingState, setRecordingState] = useState<RecordingState>('STOPPED');
+  const [recordedSequence, setRecordedSequence] = useState<any[]>([]);
+  const [startTime, setStartTime] = useState<number | null>(null);
 
 
   const currentShell = useMemo(() => SHELL_COLORS[shellColorIndex], [shellColorIndex]);
@@ -130,6 +171,11 @@ const App: React.FC = () => {
           return false; // Indicate failure
       }
 
+      if (recordingState === 'RECORDING' && startTime) {
+        const time = Date.now() - startTime;
+        setRecordedSequence(prev => [...prev, { padId, time }]);
+      }
+
       playSound(pad.toneJsConfig);
       setPads(prev => prev.map(p => p.id === padId ? { ...p, error: undefined } : p));
       const animationType = PAD_ANIMATION_MAP[pad.id];
@@ -138,7 +184,7 @@ const App: React.FC = () => {
           setTimeout(() => setActiveAnimation(null), 700);
       }
       return true; // Indicate success
-  }, [pads]);
+  }, [pads, recordingState, startTime]);
 
   useEffect(() => {
       const handleKeyDown = (event: KeyboardEvent) => {
@@ -205,6 +251,46 @@ const App: React.FC = () => {
   
   const handleCycleColor = () => setShellColorIndex((prev) => (prev + 1) % SHELL_COLORS.length);
   const handleToggleStyle = () => setIsTransparent(prev => !prev);
+
+  const handleRecord = () => {
+    if (recordingState === 'STOPPED') {
+      setRecordingState('RECORDING');
+      setRecordedSequence([]);
+      setStartTime(Date.now());
+    } else if (recordingState === 'RECORDING') {
+      setRecordingState('STOPPED');
+      setStartTime(null);
+    }
+  };
+
+  const playbackTimeoutRef = React.useRef<NodeJS.Timeout[]>([]);
+
+  const handlePlay = () => {
+    if (recordingState === 'STOPPED' && recordedSequence.length > 0) {
+      setRecordingState('PLAYING');
+      recordedSequence.forEach(note => {
+        const timeout = setTimeout(() => {
+          triggerPad(note.padId);
+        }, note.time);
+        playbackTimeoutRef.current.push(timeout);
+      });
+
+      // Determine the total duration of the sequence
+      const totalDuration = recordedSequence[recordedSequence.length - 1].time;
+
+      // Set a timeout to stop playback after the sequence is finished
+      const stopTimeout = setTimeout(() => {
+        setRecordingState('STOPPED');
+      }, totalDuration + 500); // Add a small buffer
+      playbackTimeoutRef.current.push(stopTimeout);
+    }
+  };
+
+  const handleStop = () => {
+    playbackTimeoutRef.current.forEach(clearTimeout);
+    playbackTimeoutRef.current = [];
+    setRecordingState('STOPPED');
+  };
   
   const handleStickerTrigger = () => {
     if (appState === 'OFF' || appState === 'BOOTING' || appState === 'GENERATING') return;
@@ -223,6 +309,20 @@ const App: React.FC = () => {
     setStickerUrlInput('');
     setAppState('IDLE');
     setLcdMessage(WELCOME_MESSAGE);
+  };
+
+  const handleShareKit = () => {
+    const kitData = pads.map(p => ({ id: p.id, p: p.soundPrompt }));
+    const json = JSON.stringify(kitData);
+    const base64 = btoa(json);
+    const url = `${window.location.origin}${window.location.pathname}#${base64}`;
+
+    navigator.clipboard.writeText(url).then(() => {
+      showTemporaryMessage("LINK COPIED!", 1500, appState);
+    }).catch(err => {
+      console.error('Failed to copy link: ', err);
+      showTemporaryMessage("COPY FAILED!", 1500, appState);
+    });
   };
 
   const isPoweredOn = appState !== 'OFF';
@@ -298,8 +398,16 @@ const App: React.FC = () => {
         </div>
         
         <div className="w-full flex justify-between items-end pt-4 border-t-2 border-black/10">
-            <div className="flex flex-col space-y-2 w-1/4">
-                <button onClick={handleMenuButtonClick} disabled={!isPoweredOn || appState === 'GENERATING'} className={getMenuButtonClasses()}>MENU</button>
+            <div className="flex flex-col space-y-2 w-1/3">
+                <div className="flex space-x-1">
+                    <button onClick={handleMenuButtonClick} disabled={!isPoweredOn || appState === 'GENERATING'} className={`${getMenuButtonClasses()} w-1/2`}>MENU</button>
+                    <button onClick={handleShareKit} disabled={!isPoweredOn || appState === 'GENERATING'} className={`${getMenuButtonClasses()} w-1/2`}>SHARE</button>
+                </div>
+                <div className="flex space-x-1">
+                <button onClick={handleRecord} disabled={!isPoweredOn || recordingState === 'PLAYING'} className={`w-1/3 text-white rounded-md ${recordingState === 'RECORDING' ? 'bg-red-700 animate-pulse' : 'bg-red-500'}`}>●</button>
+                <button onClick={handlePlay} disabled={!isPoweredOn || recordedSequence.length === 0 || recordingState === 'PLAYING' || recordingState === 'RECORDING'} className={`w-1/3 text-white rounded-md ${recordingState === 'PLAYING' ? 'bg-green-700' : 'bg-green-500'}`}>▶</button>
+                <button onClick={handleStop} disabled={!isPoweredOn || recordingState !== 'PLAYING'} className="w-1/3 bg-gray-500 text-white rounded-md">■</button>
+                </div>
             </div>
             
             <SpeakerGrill isPoweredOn={isPoweredOn} isTransparent={isTransparent} />
