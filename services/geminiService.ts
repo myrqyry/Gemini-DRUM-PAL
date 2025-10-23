@@ -17,11 +17,34 @@ const ai = new GoogleGenAI({ apiKey: API_KEY! }); // The "!" asserts API_KEY is 
 
 const PROMPT_PREFIX = `
 You are an expert sound designer creating configurations for Tone.js for a drum machine.
-Generate a JSON object for the following sound description:
+`;
+
+const PROMPT_EXAMPLES = `
+Here are some examples:
+
+User prompt: A deep, punchy kick drum sound. 808 style.
+{
+  "instrument": "MembraneSynth",
+  "options": {
+    "pitchDecay": 0.05,
+    "octaves": 10,
+    "oscillator": { "type": "sine" },
+    "envelope": { "attack": 0.001, "decay": 0.4, "sustain": 0.01, "release": 1.4, "attackCurve": "exponential" }
+  }
+}
+
+User prompt: A crisp, snappy snare drum with a short burst of white noise.
+{
+  "instrument": "NoiseSynth",
+  "options": {
+    "noise": { "type": "white" },
+    "envelope": { "attack": 0.001, "decay": 0.1, "sustain": 0 }
+  }
+}
 `;
 
 export const getSoundConfigFromPrompt = async (userPrompt: string, modelName: string = GEMINI_MODEL_NAME): Promise<ToneJsSoundConfig | null> => {
-  const fullPrompt = `${PROMPT_PREFIX}\n${userPrompt}`;
+  const fullPrompt = `${PROMPT_PREFIX}\n${PROMPT_EXAMPLES}\nGenerate a JSON object for the following sound description:\n${userPrompt}`;
 
   try {
     const response = await ai.models.generateContent({
