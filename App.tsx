@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { PadConfig } from './types';
-import { INITIAL_PADS, SHELL_COLORS, PAD_ANIMATION_MAP, PAD_LAYOUT_ORDER, WELCOME_MESSAGE } from './constants';
+import { INITIAL_PADS, SHELL_COLORS, PAD_ANIMATION_MAP, PAD_LAYOUT_ORDER, WELCOME_MESSAGE, METRONOME_TICK_CONFIG, GEMINI_MODEL_NAME, GEMINI_MODEL_NAME_EXPERIMENTAL } from './constants';
 import DrumPad from './components/DrumPad';
 import LcdScreen from './components/LcdScreen';
+import Metronome from './components/Metronome';
+import KitsModal from './components/KitsModal';
 import CircuitBoard from './components/CircuitBoard';
 import PowerIcon from './components/icons/PowerIcon';
 import SpeakerGrill from './components/SpeakerGrill';
@@ -82,6 +84,30 @@ const App: React.FC = () => {
   const [recordedSequence, setRecordedSequence] = useState<any[]>([]);
   const [startTime, setStartTime] = useState<number | null>(null);
 
+  const [bpm, setBpm] = useState(120);
+  const [isMetronomeOn, setIsMetronomeOn] = useState(false);
+  const [isTicking, setIsTicking] = useState(false);
+
+  const [isKitsModalOpen, setIsKitsModalOpen] = useState(false);
+  const [savedKits, setSavedKits] = useState<{ name: string; pads: PadConfig[] }[]>([]);
+
+  useEffect(() => {
+    const storedKits = localStorage.getItem('savedKits');
+    if (storedKits) {
+      setSavedKits(JSON.parse(storedKits));
+    }
+    const storedStickerTransform = localStorage.getItem('stickerTransform');
+    if (storedStickerTransform) {
+      const { rotation, scale } = JSON.parse(storedStickerTransform);
+      setStickerRotation(rotation);
+      setStickerScale(scale);
+    }
+  }, []);
+
+  const [stickerRotation, setStickerRotation] = useState(0);
+  const [stickerScale, setStickerScale] = useState(1);
+
+  const [soundModel, setSoundModel] = useState('DEFAULT');
 
   const currentShell = useMemo(() => SHELL_COLORS[shellColorIndex], [shellColorIndex]);
 
@@ -123,6 +149,17 @@ const App: React.FC = () => {
     }
   }, [appState]);
 
+  useEffect(() => {
+    if (isMetronomeOn && appState !== 'OFF') {
+      const interval = setInterval(() => {
+        playSound(METRONOME_TICK_CONFIG);
+        setIsTicking(true);
+        setTimeout(() => setIsTicking(false), 100);
+      }, (60 / bpm) * 1000);
+      return () => clearInterval(interval);
+    }
+  }, [isMetronomeOn, bpm, appState]);
+
   const handleGenerateSound = useCallback(async (padId: string, prompt: string, isPreconfig: boolean = false) => {
     if (isApiKeyMissing) return;
 
@@ -133,7 +170,8 @@ const App: React.FC = () => {
     setPads(prev => prev.map(p => p.id === padId ? { ...p, isLoading: true, error: undefined } : p));
     
     try {
-      const newConfig = await getSoundConfigFromPrompt(prompt);
+      const model = soundModel === 'EXPERIMENTAL' ? GEMINI_MODEL_NAME_EXPERIMENTAL : GEMINI_MODEL_NAME;
+      const newConfig = await getSoundConfigFromPrompt(prompt, model);
       if (newConfig) {
         setPads(prev => prev.map(p => p.id === padId ? { ...p, soundPrompt: prompt, toneJsConfig: newConfig, isLoading: false } : p));
         if (!isPreconfig) showTemporaryMessage("SUCCESS!", 1500, 'IDLE');
@@ -268,20 +306,18 @@ const App: React.FC = () => {
   const handlePlay = () => {
     if (recordingState === 'STOPPED' && recordedSequence.length > 0) {
       setRecordingState('PLAYING');
+      const playbackSpeed = 120 / bpm;
       recordedSequence.forEach(note => {
         const timeout = setTimeout(() => {
           triggerPad(note.padId);
-        }, note.time);
+        }, note.time * playbackSpeed);
         playbackTimeoutRef.current.push(timeout);
       });
 
-      // Determine the total duration of the sequence
-      const totalDuration = recordedSequence[recordedSequence.length - 1].time;
-
-      // Set a timeout to stop playback after the sequence is finished
+      const totalDuration = recordedSequence[recordedSequence.length - 1].time * playbackSpeed;
       const stopTimeout = setTimeout(() => {
         setRecordingState('STOPPED');
-      }, totalDuration + 500); // Add a small buffer
+      }, totalDuration + 500);
       playbackTimeoutRef.current.push(stopTimeout);
     }
   };
@@ -325,6 +361,29 @@ const App: React.FC = () => {
     });
   };
 
+  const handleSaveKit = (name: string) => {
+    const newKits = [...savedKits, { name, pads }];
+    setSavedKits(newKits);
+    localStorage.setItem('savedKits', JSON.stringify(newKits));
+  };
+
+  const handleLoadKit = (loadedPads: PadConfig[]) => {
+    setPads(loadedPads.map(p => ({ ...p, toneJsConfig: undefined, isLoading: false, error: undefined })));
+    setIsKitsModalOpen(false);
+  };
+
+  const handleDeleteKit = (name: string) => {
+    const newKits = savedKits.filter(kit => kit.name !== name);
+    setSavedKits(newKits);
+    localStorage.setItem('savedKits', JSON.stringify(newKits));
+  };
+
+  const handleStickerTransformChange = (rotation: number, scale: number) => {
+    setStickerRotation(rotation);
+    setStickerScale(scale);
+    localStorage.setItem('stickerTransform', JSON.stringify({ rotation, scale }));
+  };
+
   const isPoweredOn = appState !== 'OFF';
   const isMenuMode = appState === 'MENU' || appState === 'EDITING_PAD';
   
@@ -347,8 +406,17 @@ const App: React.FC = () => {
   return (
     <div className={keychainClasses} style={keychainStyle}>
         {isTransparent && <CircuitBoard />}
-        {stickerUrl && <Sticker imageUrl={stickerUrl} />}
+        {stickerUrl && <Sticker imageUrl={stickerUrl} rotation={stickerRotation} scale={stickerScale} />}
         
+        <KitsModal
+            isOpen={isKitsModalOpen}
+            onClose={() => setIsKitsModalOpen(false)}
+            savedKits={savedKits}
+            onSave={handleSaveKit}
+            onLoad={handleLoadKit}
+            onDelete={handleDeleteKit}
+        />
+
         <div className="absolute top-5 left-6 flex items-center space-x-2">
             <button onClick={handlePowerOn} disabled={isPoweredOn} className="text-gray-900/70 disabled:opacity-50 disabled:cursor-not-allowed" aria-label="Power on">
                 <PowerIcon className="w-5 h-5"/>
@@ -372,6 +440,11 @@ const App: React.FC = () => {
                 stickerUrlInput={stickerUrlInput}
                 onStickerUrlChange={setStickerUrlInput}
                 onStickerUrlSubmit={handleStickerUrlSubmit}
+                stickerRotation={stickerRotation}
+                stickerScale={stickerScale}
+                onStickerTransformChange={handleStickerTransformChange}
+                soundModel={soundModel}
+                onSoundModelChange={setSoundModel}
             />
         </div>
 
@@ -400,16 +473,26 @@ const App: React.FC = () => {
         <div className="w-full flex justify-between items-end pt-4 border-t-2 border-black/10">
             <div className="flex flex-col space-y-2 w-1/3">
                 <div className="flex space-x-1">
-                    <button onClick={handleMenuButtonClick} disabled={!isPoweredOn || appState === 'GENERATING'} className={`${getMenuButtonClasses()} w-1/2`}>MENU</button>
-                    <button onClick={handleShareKit} disabled={!isPoweredOn || appState === 'GENERATING'} className={`${getMenuButtonClasses()} w-1/2`}>SHARE</button>
+                    <button onClick={handleMenuButtonClick} disabled={!isPoweredOn || appState === 'GENERATING'} className={`${getMenuButtonClasses()} w-1/3`}>MENU</button>
+                    <button onClick={handleShareKit} disabled={!isPoweredOn || appState === 'GENERATING'} className={`${getMenuButtonClasses()} w-1/3`}>SHARE</button>
+                    <button onClick={() => setIsKitsModalOpen(true)} disabled={!isPoweredOn || appState === 'GENERATING'} className={`${getMenuButtonClasses()} w-1/3`}>KITS</button>
                 </div>
                 <div className="flex space-x-1">
-                <button onClick={handleRecord} disabled={!isPoweredOn || recordingState === 'PLAYING'} className={`w-1/3 text-white rounded-md ${recordingState === 'RECORDING' ? 'bg-red-700 animate-pulse' : 'bg-red-500'}`}>●</button>
-                <button onClick={handlePlay} disabled={!isPoweredOn || recordedSequence.length === 0 || recordingState === 'PLAYING' || recordingState === 'RECORDING'} className={`w-1/3 text-white rounded-md ${recordingState === 'PLAYING' ? 'bg-green-700' : 'bg-green-500'}`}>▶</button>
-                <button onClick={handleStop} disabled={!isPoweredOn || recordingState !== 'PLAYING'} className="w-1/3 bg-gray-500 text-white rounded-md">■</button>
+                  <button onClick={handleRecord} disabled={!isPoweredOn || recordingState === 'PLAYING'} className={`w-1/3 text-white rounded-md ${recordingState === 'RECORDING' ? 'bg-red-700 animate-pulse' : 'bg-red-500'}`}>●</button>
+                  <button onClick={handlePlay} disabled={!isPoweredOn || recordedSequence.length === 0 || recordingState === 'PLAYING' || recordingState === 'RECORDING'} className={`w-1/3 text-white rounded-md ${recordingState === 'PLAYING' ? 'bg-green-700' : 'bg-green-500'}`}>▶</button>
+                  <button onClick={handleStop} disabled={!isPoweredOn || recordingState !== 'PLAYING'} className="w-1/3 bg-gray-500 text-white rounded-md">■</button>
                 </div>
             </div>
             
+            <div className="flex flex-col items-center space-y-1 w-1/3">
+                <Metronome isTicking={isTicking} bpm={bpm} />
+                <button onClick={() => setIsMetronomeOn(!isMetronomeOn)} disabled={!isPoweredOn} className={`w-full text-white rounded-md ${isMetronomeOn ? 'bg-blue-700' : 'bg-blue-500'}`}>METRONOME</button>
+                <div className="flex items-center space-x-2">
+                    <input type="range" min="60" max="180" value={bpm} onChange={(e) => setBpm(Number(e.target.value))} disabled={!isPoweredOn} className="w-full"/>
+                    <span className="text-xs font-bold">{bpm}</span>
+                </div>
+            </div>
+
             <SpeakerGrill isPoweredOn={isPoweredOn} isTransparent={isTransparent} />
         </div>
     </div>

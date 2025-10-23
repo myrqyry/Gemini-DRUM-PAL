@@ -1,6 +1,6 @@
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { ToneJsSoundConfig, GenerateContentResponseParts } from '../types';
-import { GEMINI_MODEL_NAME } from '../constants';
+import { GEMINI_MODEL_NAME, GEMINI_MODEL_NAME_EXPERIMENTAL } from '../constants';
 
 // API Key is expected to be in process.env.API_KEY
 // Ensure this environment variable is set where this code runs.
@@ -68,12 +68,12 @@ CRITICAL GUIDELINES:
 `;
 
 
-export const getSoundConfigFromPrompt = async (userPrompt: string): Promise<ToneJsSoundConfig | null> => {
+export const getSoundConfigFromPrompt = async (userPrompt: string, modelName: string = GEMINI_MODEL_NAME): Promise<ToneJsSoundConfig | null> => {
   const fullPrompt = SOUND_DESIGN_PROMPT_TEMPLATE.replace("{USER_DESCRIPTION}", userPrompt);
 
   try {
     const response: GenerateContentResponse = await ai.models.generateContent({
-      model: GEMINI_MODEL_NAME,
+      model: modelName,
       contents: fullPrompt,
       config: {
         // Not asking for JSON mime type here because the prompt is very specific about JSON output
