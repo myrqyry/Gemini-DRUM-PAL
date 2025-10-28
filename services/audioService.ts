@@ -4,7 +4,7 @@ import { MembraneSynth, NoiseSynth, MetalSynth, FMSynth, AMSynth, Synth, PluckSy
 import { ToneJsSoundConfig, ToneJsEffectConfig } from '../types';
 
 let audioInitialized = false;
-let isInitializing = false;
+let initializationPromise: Promise<boolean> | null = null;
 
 export const getAudioContextState = (): AudioContextState | null => {
   return Tone.context?.state || null;
@@ -15,30 +15,27 @@ export const initializeAudio = async (): Promise<boolean> => {
     audioInitialized = true;
     return true;
   }
-  if (isInitializing) {
-    // Wait for ongoing initialization
-    return new Promise((resolve) => {
-      const interval = setInterval(() => {
-        if (audioInitialized) {
-          clearInterval(interval);
-          resolve(true);
-        }
-      }, 100);
-    });
+
+  if (initializationPromise) {
+    return initializationPromise;
   }
-  isInitializing = true;
-  try {
-    await Tone.start();
-    console.log('AudioContext started successfully.');
-    audioInitialized = true;
-    isInitializing = false;
-    return true;
-  } catch (error) {
-    console.error('Failed to start AudioContext:', error);
-    audioInitialized = false;
-    isInitializing = false;
-    return false;
-  }
+
+  initializationPromise = (async () => {
+    try {
+      await Tone.start();
+      console.log('AudioContext started successfully.');
+      audioInitialized = true;
+      return true;
+    } catch (error) {
+      console.error('Failed to start AudioContext:', error);
+      audioInitialized = false;
+      throw error;
+    } finally {
+      initializationPromise = null;
+    }
+  })();
+
+  return initializationPromise;
 };
 
 // Define the union type for creatable instruments
@@ -51,27 +48,50 @@ type CreatableToneInstrument =
   | Synth
   | PluckSynth;
 
+const instrumentCache = new Map<string, CreatableToneInstrument>();
+
 const createInstrument = (config: ToneJsSoundConfig): CreatableToneInstrument | null => {
+  const cacheKey = `${config.instrument}_${JSON.stringify(config.options)}`;
+
+  if (instrumentCache.has(cacheKey)) {
+    return instrumentCache.get(cacheKey)!;
+  }
+
+  let instrument: CreatableToneInstrument | null = null;
   const options = config.options || {};
+
   switch (config.instrument) {
     case 'MembraneSynth':
-      return new Tone.MembraneSynth(options);
+      instrument = new Tone.MembraneSynth(options);
+      break;
     case 'NoiseSynth':
-      return new Tone.NoiseSynth(options);
+      instrument = new Tone.NoiseSynth(options);
+      break;
     case 'MetalSynth':
-      return new Tone.MetalSynth(options);
+      instrument = new Tone.MetalSynth(options);
+      break;
     case 'FMSynth':
-      return new Tone.FMSynth(options);
+      instrument = new Tone.FMSynth(options);
+      break;
     case 'AMSynth':
-      return new Tone.AMSynth(options);
+      instrument = new Tone.AMSynth(options);
+      break;
     case 'Synth':
-      return new Tone.Synth(options);
+      instrument = new Tone.Synth(options);
+      break;
     case 'PluckSynth':
-      return new Tone.PluckSynth(options);
+      instrument = new Tone.PluckSynth(options);
+      break;
     default:
       console.warn(`Unsupported instrument type: ${config.instrument}`);
-      return new Tone.MembraneSynth(options); // Fallback
+      instrument = new Tone.MembraneSynth(options); // Fallback
   }
+
+  if (instrument && instrumentCache.size < 50) { // Limit cache size
+    instrumentCache.set(cacheKey, instrument);
+  }
+
+  return instrument;
 };
 
 const createEffect = (effectConfig: ToneJsEffectConfig): Tone.ToneAudioNode | null => {
@@ -101,7 +121,10 @@ const createEffect = (effectConfig: ToneJsEffectConfig): Tone.ToneAudioNode | nu
   }
 };
 
-export const playSound = async (soundConfig: ToneJsSoundConfig | undefined): Promise<void> => {
+export const playSound = async (
+  soundConfig: ToneJsSoundConfig | undefined,
+  timeoutsRef?: React.MutableRefObject<Set<NodeJS.Timeout>>
+): Promise<void> => {
   if (!soundConfig) {
     console.warn('No sound configuration provided to playSound.');
     return;
@@ -172,8 +195,11 @@ export const playSound = async (soundConfig: ToneJsSoundConfig | undefined): Pro
   const maxReleaseTime = 2; // Assume max 2s release for effects like reverb
   const disposeDelay = (soundActualDuration + maxReleaseTime) * 1000;
 
-  setTimeout(() => {
+  const timeoutId = setTimeout(() => {
     instrument.dispose();
     effectsChain.forEach(effect => effect.dispose());
+    timeoutsRef?.current.delete(timeoutId);
   }, disposeDelay);
+
+  timeoutsRef?.current.add(timeoutId);
 };

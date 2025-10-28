@@ -10,7 +10,10 @@ import PowerIcon from './components/icons/PowerIcon';
 import SpeakerGrill from './components/SpeakerGrill';
 import Sticker from './components/Sticker';
 import { getSoundConfigFromPrompt } from './services/geminiService';
-import { playSound, initializeAudio, getAudioContextState } from './services/audioService';
+import { getAudioContextState } from './services/audioService';
+import { useAudioManager } from './hooks/useAudioManager';
+import { useKitManager } from './hooks/useKitManager';
+import { useRecording } from './hooks/useRecording';
 
 type AppState = 'OFF' | 'BOOTING' | 'IDLE' | 'MENU' | 'EDITING_PAD' | 'GENERATING' | 'ERROR' | 'STICKER_PROMPT';
 
@@ -62,14 +65,13 @@ const getPadsFromHash = (): PadConfig[] => {
 };
 
 const App: React.FC = () => {
-  const [pads, setPads] = useState<PadConfig[]>(getPadsFromHash());
+  const { pads, setPads, savedKits, handleSaveKit, handleLoadKit, handleDeleteKit } = useKitManager(getPadsFromHash());
+  const { audioInitialized, initializeAudio, playSound } = useAudioManager();
   const [appState, setAppState] = useState<AppState>('OFF');
   const [lcdMessage, setLcdMessage] = useState('');
   const [selectedPadId, setSelectedPadId] = useState<string | null>(null);
   const [promptInputValue, setPromptInputValue] = useState('');
   
-  const [isApiKeyMissing, setIsApiKeyMissing] = useState<boolean>(false);
-
   const [shellColorIndex, setShellColorIndex] = useState(0);
   const [isTransparent, setIsTransparent] = useState(false);
   const [activeAnimation, setActiveAnimation] = useState<string | null>(null);
@@ -79,30 +81,11 @@ const App: React.FC = () => {
   const [stickerClickCount, setStickerClickCount] = useState(0);
   const [stickerUrlInput, setStickerUrlInput] = useState('');
 
-  type RecordingState = 'RECORDING' | 'PLAYING' | 'STOPPED';
-  const [recordingState, setRecordingState] = useState<RecordingState>('STOPPED');
-  const [recordedSequence, setRecordedSequence] = useState<any[]>([]);
-  const [startTime, setStartTime] = useState<number | null>(null);
-
   const [bpm, setBpm] = useState(120);
   const [isMetronomeOn, setIsMetronomeOn] = useState(false);
   const [isTicking, setIsTicking] = useState(false);
 
   const [isKitsModalOpen, setIsKitsModalOpen] = useState(false);
-  const [savedKits, setSavedKits] = useState<{ name: string; pads: PadConfig[] }[]>([]);
-
-  useEffect(() => {
-    const storedKits = localStorage.getItem('savedKits');
-    if (storedKits) {
-      setSavedKits(JSON.parse(storedKits));
-    }
-    const storedStickerTransform = localStorage.getItem('stickerTransform');
-    if (storedStickerTransform) {
-      const { rotation, scale } = JSON.parse(storedStickerTransform);
-      setStickerRotation(rotation);
-      setStickerScale(scale);
-    }
-  }, []);
 
   const [stickerRotation, setStickerRotation] = useState(0);
   const [stickerScale, setStickerScale] = useState(1);
@@ -111,13 +94,45 @@ const App: React.FC = () => {
 
   const currentShell = useMemo(() => SHELL_COLORS[shellColorIndex], [shellColorIndex]);
 
+  const soundTimeoutsRef = React.useRef<Set<NodeJS.Timeout>>(new Set());
+
   useEffect(() => {
-    if (!process.env.API_KEY) {
-      setLcdMessage("ERROR: API KEY\nMISSING");
-      setAppState('ERROR');
-      setIsApiKeyMissing(true);
+    return () => {
+      // Cleanup on unmount
+      soundTimeoutsRef.current.forEach(clearTimeout);
+      soundTimeoutsRef.current.clear();
+    };
+  }, []);
+
+  const triggerPad = useCallback((padId: string): boolean => {
+    const pad = pads.find(p => p.id === padId);
+    if (!pad || !pad.toneJsConfig) {
+        return false; // Indicate failure
+    }
+
+    recordNote(padId);
+
+    playSound(pad.toneJsConfig, soundTimeoutsRef);
+    setPads(prev => prev.map(p => p.id === padId ? { ...p, error: undefined } : p));
+    const animationType = PAD_ANIMATION_MAP[pad.id];
+    if (animationType) {
+        setActiveAnimation(animationType);
+        setTimeout(() => setActiveAnimation(null), 700);
+    }
+    return true; // Indicate success
+}, [pads, setPads]);
+
+  const { recordingState, handleRecord, handlePlay, handleStop, recordNote, recordedSequence } = useRecording(triggerPad, bpm);
+
+  useEffect(() => {
+    const storedStickerTransform = localStorage.getItem('stickerTransform');
+    if (storedStickerTransform) {
+      const { rotation, scale } = JSON.parse(storedStickerTransform);
+      setStickerRotation(rotation);
+      setStickerScale(scale);
     }
   }, []);
+
   
   const showTemporaryMessage = useCallback((message: string, duration: number = 2000, nextState: AppState = 'IDLE') => {
     setLcdMessage(message);
@@ -158,11 +173,9 @@ const App: React.FC = () => {
       }, (60 / bpm) * 1000);
       return () => clearInterval(interval);
     }
-  }, [isMetronomeOn, bpm, appState]);
+  }, [isMetronomeOn, bpm, appState, playSound]);
 
   const handleGenerateSound = useCallback(async (padId: string, prompt: string, isPreconfig: boolean = false) => {
-    if (isApiKeyMissing) return;
-
     if (!isPreconfig) {
         setAppState('GENERATING');
         setLcdMessage(`GENERATING\n${pads.find(p=>p.id === padId)?.name || ''} SOUND...`);
@@ -188,10 +201,10 @@ const App: React.FC = () => {
     } finally {
         if (!isPreconfig) setSelectedPadId(null);
     }
-  }, [isApiKeyMissing, pads, showTemporaryMessage]);
+  }, [isApiKeyMissing, pads, showTemporaryMessage, setPads, soundModel]);
 
   useEffect(() => {
-    if (appState !== 'IDLE' || isApiKeyMissing) return;
+    if (appState !== 'IDLE') return;
     const audioState = getAudioContextState();
     if (audioState !== 'running') return;
 
@@ -202,27 +215,6 @@ const App: React.FC = () => {
       });
     }
   }, [appState, isApiKeyMissing, pads, handleGenerateSound]);
-  
-  const triggerPad = useCallback((padId: string): boolean => {
-      const pad = pads.find(p => p.id === padId);
-      if (!pad || !pad.toneJsConfig) {
-          return false; // Indicate failure
-      }
-
-      if (recordingState === 'RECORDING' && startTime) {
-        const time = Date.now() - startTime;
-        setRecordedSequence(prev => [...prev, { padId, time }]);
-      }
-
-      playSound(pad.toneJsConfig);
-      setPads(prev => prev.map(p => p.id === padId ? { ...p, error: undefined } : p));
-      const animationType = PAD_ANIMATION_MAP[pad.id];
-      if (animationType) {
-          setActiveAnimation(animationType);
-          setTimeout(() => setActiveAnimation(null), 700);
-      }
-      return true; // Indicate success
-  }, [pads, recordingState, startTime]);
 
   useEffect(() => {
       const handleKeyDown = (event: KeyboardEvent) => {
@@ -289,44 +281,6 @@ const App: React.FC = () => {
   
   const handleCycleColor = () => setShellColorIndex((prev) => (prev + 1) % SHELL_COLORS.length);
   const handleToggleStyle = () => setIsTransparent(prev => !prev);
-
-  const handleRecord = () => {
-    if (recordingState === 'STOPPED') {
-      setRecordingState('RECORDING');
-      setRecordedSequence([]);
-      setStartTime(Date.now());
-    } else if (recordingState === 'RECORDING') {
-      setRecordingState('STOPPED');
-      setStartTime(null);
-    }
-  };
-
-  const playbackTimeoutRef = React.useRef<NodeJS.Timeout[]>([]);
-
-  const handlePlay = () => {
-    if (recordingState === 'STOPPED' && recordedSequence.length > 0) {
-      setRecordingState('PLAYING');
-      const playbackSpeed = 120 / bpm;
-      recordedSequence.forEach(note => {
-        const timeout = setTimeout(() => {
-          triggerPad(note.padId);
-        }, note.time * playbackSpeed);
-        playbackTimeoutRef.current.push(timeout);
-      });
-
-      const totalDuration = recordedSequence[recordedSequence.length - 1].time * playbackSpeed;
-      const stopTimeout = setTimeout(() => {
-        setRecordingState('STOPPED');
-      }, totalDuration + 500);
-      playbackTimeoutRef.current.push(stopTimeout);
-    }
-  };
-
-  const handleStop = () => {
-    playbackTimeoutRef.current.forEach(clearTimeout);
-    playbackTimeoutRef.current = [];
-    setRecordingState('STOPPED');
-  };
   
   const handleStickerTrigger = () => {
     if (appState === 'OFF' || appState === 'BOOTING' || appState === 'GENERATING') return;
@@ -338,9 +292,22 @@ const App: React.FC = () => {
     }
   };
 
+  const validateUrl = (url: string): boolean => {
+    try {
+      const parsed = new URL(url);
+      return ['https:', 'http:'].includes(parsed.protocol) &&
+             /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(parsed.pathname);
+    } catch {
+      return false;
+    }
+  };
+
   const handleStickerUrlSubmit = () => {
-    if (stickerUrlInput.trim()) {
-      setStickerUrl(stickerUrlInput.trim());
+    const trimmedUrl = stickerUrlInput.trim();
+    if (trimmedUrl && validateUrl(trimmedUrl)) {
+      setStickerUrl(trimmedUrl);
+    } else {
+      showTemporaryMessage("INVALID URL", 1500, 'IDLE');
     }
     setStickerUrlInput('');
     setAppState('IDLE');
@@ -361,23 +328,6 @@ const App: React.FC = () => {
     });
   };
 
-  const handleSaveKit = (name: string) => {
-    const newKits = [...savedKits, { name, pads }];
-    setSavedKits(newKits);
-    localStorage.setItem('savedKits', JSON.stringify(newKits));
-  };
-
-  const handleLoadKit = (loadedPads: PadConfig[]) => {
-    setPads(loadedPads.map(p => ({ ...p, toneJsConfig: undefined, isLoading: false, error: undefined })));
-    setIsKitsModalOpen(false);
-  };
-
-  const handleDeleteKit = (name: string) => {
-    const newKits = savedKits.filter(kit => kit.name !== name);
-    setSavedKits(newKits);
-    localStorage.setItem('savedKits', JSON.stringify(newKits));
-  };
-
   const handleStickerTransformChange = (rotation: number, scale: number) => {
     setStickerRotation(rotation);
     setStickerScale(scale);
@@ -391,7 +341,7 @@ const App: React.FC = () => {
   const keychainStyle = isTransparent ? { backgroundColor: currentShell.transparentRgba } : {};
   const textInsetClass = currentShell.isLight ? 'text-inset-dark' : 'text-inset-light';
 
-  const getMenuButtonClasses = () => {
+  const getMenuButtonClasses = useMemo(() => {
     const base = 'w-full text-center px-3 py-1 text-sm font-bold rounded-lg shadow-md transition-all duration-200 border disabled:opacity-50 disabled:cursor-not-allowed';
     
     if (isTransparent) {
@@ -401,7 +351,7 @@ const App: React.FC = () => {
 
     const solidBase = `${base} border-black/20`;
     return `${solidBase} ${isMenuMode ? `bg-yellow-300 text-black ${textInsetClass}` : `bg-gray-600 text-white ${textInsetClass}`}`;
-  };
+  }, [isTransparent, currentShell, isMenuMode, textInsetClass]);
 
   return (
     <div className={keychainClasses} style={keychainStyle}>
@@ -473,9 +423,9 @@ const App: React.FC = () => {
         <div className="w-full flex justify-between items-end pt-4 border-t-2 border-black/10">
             <div className="flex flex-col space-y-2 w-1/3">
                 <div className="flex space-x-1">
-                    <button onClick={handleMenuButtonClick} disabled={!isPoweredOn || appState === 'GENERATING'} className={`${getMenuButtonClasses()} w-1/3`}>MENU</button>
-                    <button onClick={handleShareKit} disabled={!isPoweredOn || appState === 'GENERATING'} className={`${getMenuButtonClasses()} w-1/3`}>SHARE</button>
-                    <button onClick={() => setIsKitsModalOpen(true)} disabled={!isPoweredOn || appState === 'GENERATING'} className={`${getMenuButtonClasses()} w-1/3`}>KITS</button>
+                    <button onClick={handleMenuButtonClick} disabled={!isPoweredOn || appState === 'GENERATING'} className={`${getMenuButtonClasses} w-1/3`}>MENU</button>
+                    <button onClick={handleShareKit} disabled={!isPoweredOn || appState === 'GENERATING'} className={`${getMenuButtonClasses} w-1/3`}>SHARE</button>
+                    <button onClick={() => setIsKitsModalOpen(true)} disabled={!isPoweredOn || appState === 'GENERATING'} className={`${getMenuButtonClasses} w-1/3`}>KITS</button>
                 </div>
                 <div className="flex space-x-1">
                   <button onClick={handleRecord} disabled={!isPoweredOn || recordingState === 'PLAYING'} className={`w-1/3 text-white rounded-md ${recordingState === 'RECORDING' ? 'bg-red-700 animate-pulse' : 'bg-red-500'}`}>●</button>
