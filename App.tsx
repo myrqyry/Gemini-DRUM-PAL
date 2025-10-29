@@ -4,6 +4,8 @@ import { INITIAL_PADS, SHELL_COLORS, PAD_ANIMATION_MAP, PAD_LAYOUT_ORDER, WELCOM
 import DrumPad from './components/DrumPad';
 import LcdScreen from './components/LcdScreen';
 import Metronome from './components/Metronome';
+import DrumMachineControls from './components/controls/DrumMachineControls';
+import MetronomeControls from './components/controls/MetronomeControls';
 import KitsModal from './components/KitsModal';
 import CircuitBoard from './components/CircuitBoard';
 import PowerIcon from './components/icons/PowerIcon';
@@ -14,58 +16,17 @@ import { getAudioContextState } from './services/audioService';
 import { useAudioManager } from './hooks/useAudioManager';
 import { useKitManager } from './hooks/useKitManager';
 import { useRecording } from './hooks/useRecording';
+import { SecurityUtils } from './utils/security';
+import { getPadIdFromKey } from './utils/keyboardMapping';
+import { parseKitFromUrl } from './utils/urlHelpers';
+import { KitService } from './services/kitService';
+import { AppError, createErrorHandler } from './utils/errorHandling';
+import SoundGenerationErrorBoundary from './components/error/SoundGenerationErrorBoundary';
 
 type AppState = 'OFF' | 'BOOTING' | 'IDLE' | 'MENU' | 'EDITING_PAD' | 'GENERATING' | 'ERROR' | 'STICKER_PROMPT';
 
-const KEY_TO_PAD_MAP: { [key: string]: string } = {
-    'q': 'hihat_closed',
-    'w': 'hihat_open',
-    'e': 'cymbal_crash',
-    'a': 'snare',
-    's': 'tom1',
-    'd': 'clap',
-    'c': 'fx1',
-    ' ': 'kick', // Space key
-};
-
-const getPadsFromHash = (): PadConfig[] => {
-  if (typeof window !== 'undefined' && window.location.hash) {
-    try {
-      const hash = window.location.hash.substring(1);
-      if (!/^[A-Za-z0-9+/=]+$/.test(hash)) {
-          throw new Error("Invalid base64 string in hash");
-      }
-      const decoded = atob(hash);
-      const parsed = JSON.parse(decoded) as { id: string; p: string }[];
-
-      if (Array.isArray(parsed)) {
-        const padsFromHash: Record<string, string> = parsed.reduce((acc, item) => {
-          if (item.id && typeof item.p === 'string') {
-            acc[item.id] = item.p;
-          }
-          return acc;
-        }, {} as Record<string, string>);
-
-        return INITIAL_PADS.map(pad => {
-          const prompt = padsFromHash[pad.id];
-          if (prompt) {
-            return { ...pad, soundPrompt: prompt, toneJsConfig: undefined, isLoading: false, error: undefined };
-          }
-          return pad;
-        });
-      }
-    } catch (error) {
-      console.error("Failed to parse sound kit from URL hash:", error);
-       if (window.history.pushState) {
-          window.history.pushState("", document.title, window.location.pathname + window.location.search);
-      }
-    }
-  }
-  return INITIAL_PADS;
-};
-
 const App: React.FC = () => {
-  const { pads, setPads, savedKits, handleSaveKit, handleLoadKit, handleDeleteKit } = useKitManager(getPadsFromHash());
+  const { pads, setPads, savedKits, handleSaveKit, handleLoadKit, handleDeleteKit } = useKitManager(parseKitFromUrl());
   const { audioInitialized, initializeAudio, playSound } = useAudioManager();
   const [appState, setAppState] = useState<AppState>('OFF');
   const [lcdMessage, setLcdMessage] = useState('');
@@ -176,32 +137,55 @@ const App: React.FC = () => {
   }, [isMetronomeOn, bpm, appState, playSound]);
 
   const handleGenerateSound = useCallback(async (padId: string, prompt: string, isPreconfig: boolean = false) => {
-    if (!isPreconfig) {
-        setAppState('GENERATING');
-        setLcdMessage(`GENERATING\n${pads.find(p=>p.id === padId)?.name || ''} SOUND...`);
-    }
-    setPads(prev => prev.map(p => p.id === padId ? { ...p, isLoading: true, error: undefined } : p));
-    
+    const handleError = createErrorHandler('sound generation');
+
     try {
+      if (!prompt.trim()) {
+        throw new AppError('Sound prompt cannot be empty', 'VALIDATION_ERROR');
+      }
+
+      setPads(prev => prev.map(p =>
+        p.id === padId ? { ...p, isLoading: true, error: undefined } : p
+      ));
+
       const model = soundModel === 'EXPERIMENTAL' ? GEMINI_MODEL_NAME_EXPERIMENTAL : GEMINI_MODEL_NAME;
       const newConfig = await getSoundConfigFromPrompt(prompt, model);
-      if (newConfig) {
-        setPads(prev => prev.map(p => p.id === padId ? { ...p, soundPrompt: prompt, toneJsConfig: newConfig, isLoading: false } : p));
-        if (!isPreconfig) showTemporaryMessage("SUCCESS!", 1500, 'IDLE');
-      } else {
-        throw new Error("Invalid config received");
+
+      if (!newConfig) {
+        throw new AppError('Failed to generate sound configuration', 'CONFIG_GENERATION_ERROR');
       }
-    } catch (error) {
-      console.error("Error generating sound:", error);
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
-      setPads(prev => prev.map(p => p.id === padId ? { ...p, isLoading: false, error: errorMessage } : p));
+
+      setPads(prev => prev.map(p =>
+        p.id === padId ? {
+          ...p,
+          soundPrompt: prompt,
+          toneJsConfig: newConfig,
+          isLoading: false,
+          error: undefined
+        } : p
+      ));
+
       if (!isPreconfig) {
-          showTemporaryMessage(`ERROR: CONFIG\nFAILED`, 2000, 'IDLE');
+        showTemporaryMessage("SUCCESS!", 1500, 'IDLE');
       }
-    } finally {
-        if (!isPreconfig) setSelectedPadId(null);
+
+    } catch (error) {
+      const appError = handleError(error);
+      console.error(`[${appError.code}] ${appError.message}`, error);
+
+      setPads(prev => prev.map(p =>
+        p.id === padId ? {
+          ...p,
+          isLoading: false,
+          error: appError.message
+        } : p
+      ));
+
+      if (!isPreconfig && appError.recoverable) {
+        showTemporaryMessage(`ERROR: ${appError.code}`, 2000, 'IDLE');
+      }
     }
-  }, [isApiKeyMissing, pads, showTemporaryMessage, setPads, soundModel]);
+  }, [pads, showTemporaryMessage, setPads, soundModel]);
 
   useEffect(() => {
     if (appState !== 'IDLE') return;
@@ -222,8 +206,7 @@ const App: React.FC = () => {
               return;
           }
 
-          const key = event.key === ' ' ? ' ' : event.key.toLowerCase();
-          const padId = KEY_TO_PAD_MAP[key];
+          const padId = getPadIdFromKey(event.key);
 
           if (padId && ['IDLE', 'ERROR', 'EDITING_PAD', 'MENU'].includes(appState)) {
               event.preventDefault(); // Prevent space from scrolling etc.
@@ -292,40 +275,29 @@ const App: React.FC = () => {
     }
   };
 
-  const validateUrl = (url: string): boolean => {
-    try {
-      const parsed = new URL(url);
-      return ['https:', 'http:'].includes(parsed.protocol) &&
-             /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(parsed.pathname);
-    } catch {
-      return false;
-    }
-  };
+  const handleStickerUrlSubmit = useCallback(() => {
+    const sanitizedUrl = SecurityUtils.sanitizeUrl(stickerUrlInput);
 
-  const handleStickerUrlSubmit = () => {
-    const trimmedUrl = stickerUrlInput.trim();
-    if (trimmedUrl && validateUrl(trimmedUrl)) {
-      setStickerUrl(trimmedUrl);
+    if (sanitizedUrl) {
+      setStickerUrl(sanitizedUrl);
+      showTemporaryMessage("STICKER LOADED!", 1500, 'IDLE');
     } else {
       showTemporaryMessage("INVALID URL", 1500, 'IDLE');
     }
+
     setStickerUrlInput('');
     setAppState('IDLE');
     setLcdMessage(WELCOME_MESSAGE);
-  };
+  }, [stickerUrlInput, showTemporaryMessage]);
 
-  const handleShareKit = () => {
-    const kitData = pads.map(p => ({ id: p.id, p: p.soundPrompt }));
-    const json = JSON.stringify(kitData);
-    const base64 = btoa(json);
-    const url = `${window.location.origin}${window.location.pathname}#${base64}`;
-
-    navigator.clipboard.writeText(url).then(() => {
+  const handleShareKit = async () => {
+    const url = KitService.generateShareableUrl(pads);
+    const success = await KitService.copyToClipboard(url);
+    if (success) {
       showTemporaryMessage("LINK COPIED!", 1500, appState);
-    }).catch(err => {
-      console.error('Failed to copy link: ', err);
+    } else {
       showTemporaryMessage("COPY FAILED!", 1500, appState);
-    });
+    }
   };
 
   const handleStickerTransformChange = (rotation: number, scale: number) => {
@@ -398,50 +370,53 @@ const App: React.FC = () => {
             />
         </div>
 
-        <div className="grid grid-cols-3 w-full max-w-xs sm:max-w-sm place-items-center gap-x-2 gap-y-1">
-            {PAD_LAYOUT_ORDER.map((padId, index) => {
-              if (!padId) return <div key={`empty-${index}`} className="w-16 h-16 sm:w-20 sm:h-20" />;
-              const pad = pads.find(p => p.id === padId);
-              if (!pad) return null;
-              
-              return (
-                  <DrumPad
-                      key={pad.id}
-                      padConfig={pad}
-                      onClick={handlePadClick}
-                      isSelected={selectedPadId === pad.id}
-                      disabled={!isPoweredOn}
-                      isTransparent={isTransparent}
-                      textColor={currentShell.textColor}
-                      textInsetClass={textInsetClass}
-                      isKeyPressed={!!hotPads[pad.id]}
-                  />
-              );
-            })}
-        </div>
+        <SoundGenerationErrorBoundary onError={(error) => showTemporaryMessage(`ERROR: ${error.message}`, 2000, 'IDLE')}>
+          <div className="grid grid-cols-3 w-full max-w-xs sm:max-w-sm place-items-center gap-x-2 gap-y-1">
+              {PAD_LAYOUT_ORDER.map((padId, index) => {
+                if (!padId) return <div key={`empty-${index}`} className="w-16 h-16 sm:w-20 sm:h-20" />;
+                const pad = pads.find(p => p.id === padId);
+                if (!pad) return null;
+
+                return (
+                    <DrumPad
+                        key={pad.id}
+                        padConfig={pad}
+                        onClick={handlePadClick}
+                        isSelected={selectedPadId === pad.id}
+                        disabled={!isPoweredOn}
+                        isTransparent={isTransparent}
+                        textColor={currentShell.textColor}
+                        textInsetClass={textInsetClass}
+                        isKeyPressed={!!hotPads[pad.id]}
+                    />
+                );
+              })}
+          </div>
+        </SoundGenerationErrorBoundary>
         
         <div className="w-full flex justify-between items-end pt-4 border-t-2 border-black/10">
-            <div className="flex flex-col space-y-2 w-1/3">
-                <div className="flex space-x-1">
-                    <button onClick={handleMenuButtonClick} disabled={!isPoweredOn || appState === 'GENERATING'} className={`${getMenuButtonClasses} w-1/3`}>MENU</button>
-                    <button onClick={handleShareKit} disabled={!isPoweredOn || appState === 'GENERATING'} className={`${getMenuButtonClasses} w-1/3`}>SHARE</button>
-                    <button onClick={() => setIsKitsModalOpen(true)} disabled={!isPoweredOn || appState === 'GENERATING'} className={`${getMenuButtonClasses} w-1/3`}>KITS</button>
-                </div>
-                <div className="flex space-x-1">
-                  <button onClick={handleRecord} disabled={!isPoweredOn || recordingState === 'PLAYING'} className={`w-1/3 text-white rounded-md ${recordingState === 'RECORDING' ? 'bg-red-700 animate-pulse' : 'bg-red-500'}`}>●</button>
-                  <button onClick={handlePlay} disabled={!isPoweredOn || recordedSequence.length === 0 || recordingState === 'PLAYING' || recordingState === 'RECORDING'} className={`w-1/3 text-white rounded-md ${recordingState === 'PLAYING' ? 'bg-green-700' : 'bg-green-500'}`}>▶</button>
-                  <button onClick={handleStop} disabled={!isPoweredOn || recordingState !== 'PLAYING'} className="w-1/3 bg-gray-500 text-white rounded-md">■</button>
-                </div>
-            </div>
-            
-            <div className="flex flex-col items-center space-y-1 w-1/3">
-                <Metronome isTicking={isTicking} bpm={bpm} />
-                <button onClick={() => setIsMetronomeOn(!isMetronomeOn)} disabled={!isPoweredOn} className={`w-full text-white rounded-md ${isMetronomeOn ? 'bg-blue-700' : 'bg-blue-500'}`}>METRONOME</button>
-                <div className="flex items-center space-x-2">
-                    <input type="range" min="60" max="180" value={bpm} onChange={(e) => setBpm(Number(e.target.value))} disabled={!isPoweredOn} className="w-full"/>
-                    <span className="text-xs font-bold">{bpm}</span>
-                </div>
-            </div>
+          <DrumMachineControls
+            isPoweredOn={isPoweredOn}
+            isMenuMode={isMenuMode}
+            appState={appState}
+            recordingState={recordingState}
+            getMenuButtonClasses={getMenuButtonClasses}
+            handleMenuButtonClick={handleMenuButtonClick}
+            handleShareKit={handleShareKit}
+            setIsKitsModalOpen={setIsKitsModalOpen}
+            handleRecord={handleRecord}
+            handlePlay={handlePlay}
+            handleStop={handleStop}
+            recordedSequence={recordedSequence}
+          />
+          <MetronomeControls
+            isPoweredOn={isPoweredOn}
+            isMetronomeOn={isMetronomeOn}
+            bpm={bpm}
+            isTicking={isTicking}
+            setIsMetronomeOn={setIsMetronomeOn}
+            setBpm={setBpm}
+          />
 
             <SpeakerGrill isPoweredOn={isPoweredOn} isTransparent={isTransparent} />
         </div>

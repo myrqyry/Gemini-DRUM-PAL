@@ -1,11 +1,11 @@
-import { useState, useRef } from 'react';
-import { PadConfig } from '../types';
+import { useState, useRef, useCallback } from 'react';
+import { RecordedNote, RecordingSequence, validateRecordedNote } from '../types/recording';
 
 type RecordingState = 'RECORDING' | 'PLAYING' | 'STOPPED';
 
 export const useRecording = (triggerPad: (padId: string) => boolean, bpm: number) => {
   const [recordingState, setRecordingState] = useState<RecordingState>('STOPPED');
-  const [recordedSequence, setRecordedSequence] = useState<any[]>([]);
+  const [recordedSequence, setRecordedSequence] = useState<RecordedNote[]>([]);
   const [startTime, setStartTime] = useState<number | null>(null);
   const playbackTimeoutRef = useRef<NodeJS.Timeout[]>([]);
 
@@ -27,11 +27,11 @@ export const useRecording = (triggerPad: (padId: string) => boolean, bpm: number
       recordedSequence.forEach(note => {
         const timeout = setTimeout(() => {
           triggerPad(note.padId);
-        }, note.time * playbackSpeed);
+        }, note.timestamp * playbackSpeed);
         playbackTimeoutRef.current.push(timeout);
       });
 
-      const totalDuration = recordedSequence[recordedSequence.length - 1].time * playbackSpeed;
+      const totalDuration = recordedSequence[recordedSequence.length - 1].timestamp * playbackSpeed;
       const stopTimeout = setTimeout(() => {
         setRecordingState('STOPPED');
       }, totalDuration + 500);
@@ -45,12 +45,38 @@ export const useRecording = (triggerPad: (padId: string) => boolean, bpm: number
     setRecordingState('STOPPED');
   };
 
-  const recordNote = (padId: string) => {
-    if (recordingState === 'RECORDING' && startTime) {
-      const time = Date.now() - startTime;
-      setRecordedSequence(prev => [...prev, { padId, time }]);
-    }
-  };
+  const recordNote = useCallback((padId: string, velocity: number = 1) => {
+    if (recordingState !== 'RECORDING' || !startTime) return;
 
-  return { recordingState, handleRecord, handlePlay, handleStop, recordNote, recordedSequence };
+    const timestamp = Date.now() - startTime;
+    const note: RecordedNote = { padId, timestamp, velocity };
+
+    if (!validateRecordedNote(note)) {
+      console.error('Invalid note data:', note);
+      return;
+    }
+
+    setRecordedSequence(prev => [...prev, note]);
+  }, [recordingState, startTime]);
+
+  const exportSequence = useCallback((): RecordingSequence | null => {
+    if (recordedSequence.length === 0) return null;
+
+    return {
+      notes: recordedSequence,
+      bpm,
+      duration: recordedSequence[recordedSequence.length - 1]?.timestamp || 0,
+      createdAt: new Date()
+    };
+  }, [recordedSequence, bpm]);
+
+  return {
+    recordingState,
+    handleRecord,
+    handlePlay,
+    handleStop,
+    recordNote,
+    recordedSequence,
+    exportSequence
+  };
 };

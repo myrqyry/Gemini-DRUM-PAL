@@ -1,0 +1,47 @@
+import React from 'react';
+
+interface DrumMachineControlsProps {
+  isPoweredOn: boolean;
+  isMenuMode: boolean;
+  appState: string;
+  recordingState: string;
+  getMenuButtonClasses: string;
+  handleMenuButtonClick: () => void;
+  handleShareKit: () => void;
+  setIsKitsModalOpen: (isOpen: boolean) => void;
+  handleRecord: () => void;
+  handlePlay: () => void;
+  handleStop: () => void;
+  recordedSequence: any[];
+}
+
+const DrumMachineControls: React.FC<DrumMachineControlsProps> = React.memo(({
+  isPoweredOn,
+  appState,
+  getMenuButtonClasses,
+  handleMenuButtonClick,
+  handleShareKit,
+  setIsKitsModalOpen,
+  handleRecord,
+  recordingState,
+  handlePlay,
+  recordedSequence,
+  handleStop
+}) => {
+  return (
+    <div className="flex flex-col space-y-2 w-1/3">
+      <div className="flex space-x-1">
+        <button onClick={handleMenuButtonClick} disabled={!isPoweredOn || appState === 'GENERATING'} className={`${getMenuButtonClasses} w-1/3`}>MENU</button>
+        <button onClick={handleShareKit} disabled={!isPoweredOn || appState === 'GENERATING'} className={`${getMenuButtonClasses} w-1/3`}>SHARE</button>
+        <button onClick={() => setIsKitsModalOpen(true)} disabled={!isPoweredOn || appState === 'GENERATING'} className={`${getMenuButtonClasses} w-1/3`}>KITS</button>
+      </div>
+      <div className="flex space-x-1">
+        <button onClick={handleRecord} disabled={!isPoweredOn || recordingState === 'PLAYING'} className={`w-1/3 text-white rounded-md ${recordingState === 'RECORDING' ? 'bg-red-700 animate-pulse' : 'bg-red-500'}`}>●</button>
+        <button onClick={handlePlay} disabled={!isPoweredOn || recordedSequence.length === 0 || recordingState === 'PLAYING' || recordingState === 'RECORDING'} className={`w-1/3 text-white rounded-md ${recordingState === 'PLAYING' ? 'bg-green-700' : 'bg-green-500'}`}>▶</button>
+        <button onClick={handleStop} disabled={!isPoweredOn || recordingState !== 'PLAYING'} className="w-1/3 bg-gray-500 text-white rounded-md">■</button>
+      </div>
+    </div>
+  );
+});
+
+export default DrumMachineControls;
