@@ -1,4 +1,5 @@
 import { useReducer } from 'react';
+import { WELCOME_MESSAGE } from '../../constants';
 
 interface ToyState {
   power: 'OFF' | 'BOOTING' | 'ON';
@@ -7,6 +8,9 @@ interface ToyState {
     lcdMessage: string;
     selectedPadId: string | null;
     activeAnimation: string | null;
+    isKitsModalOpen: boolean;
+    promptInputValue: string;
+    stickerUrlInput: string;
   };
   audio: {
     bpm: number;
@@ -16,6 +20,9 @@ interface ToyState {
     shellColorIndex: number;
     isTransparent: boolean;
     stickerUrl: string | null;
+    stickerRotation: number;
+    stickerScale: number;
+    soundModel: 'DEFAULT' | 'EXPERIMENTAL';
   };
 }
 
@@ -26,8 +33,9 @@ type ToyAction =
   | { type: 'UPDATE_LCD'; message: string }
   | { type: 'SELECT_PAD'; padId: string | null }
   | { type: 'TRIGGER_ANIMATION'; animation: string | null }
-  | { type: 'UPDATE_AUDIO_SETTINGS'; settings: Partial<ToyState['audio']> }
-  | { type: 'UPDATE_CUSTOMIZATION'; settings: Partial<ToyState['customization']> }
+  | { type: 'UPDATE_UI'; ui: Partial<ToyState['ui']> }
+  | { type: 'UPDATE_AUDIO'; audio: Partial<ToyState['audio']> }
+  | { type: 'UPDATE_CUSTOMIZATION'; customization: Partial<ToyState['customization']> }
   | { type: 'SET_ERROR'; message: string };
 
 const initialToyState: ToyState = {
@@ -37,6 +45,9 @@ const initialToyState: ToyState = {
     lcdMessage: '',
     selectedPadId: null,
     activeAnimation: null,
+    isKitsModalOpen: false,
+    promptInputValue: '',
+    stickerUrlInput: '',
   },
   audio: {
     bpm: 120,
@@ -46,6 +57,9 @@ const initialToyState: ToyState = {
     shellColorIndex: 0,
     isTransparent: false,
     stickerUrl: null,
+    stickerRotation: 0,
+    stickerScale: 1,
+    soundModel: 'DEFAULT',
   },
 };
 
@@ -63,14 +77,16 @@ function toyStateReducer(state: ToyState, action: ToyAction): ToyState {
       return {
         ...state,
         ui: { ...state.ui, selectedPadId: action.padId },
-        mode: action.padId ? 'EDITING' : 'IDLE',
+        mode: 'EDITING',
       };
     case 'TRIGGER_ANIMATION':
       return { ...state, ui: { ...state.ui, activeAnimation: action.animation } };
-    case 'UPDATE_AUDIO_SETTINGS':
-        return { ...state, audio: { ...state.audio, ...action.settings } };
+    case 'UPDATE_UI':
+        return { ...state, ui: { ...state.ui, ...action.ui } };
+    case 'UPDATE_AUDIO':
+        return { ...state, audio: { ...state.audio, ...action.audio } };
     case 'UPDATE_CUSTOMIZATION':
-        return { ...state, customization: { ...state.customization, ...action.settings } };
+        return { ...state, customization: { ...state.customization, ...action.customization } };
     case 'SET_ERROR':
         return { ...state, mode: 'ERROR', ui: { ...state.ui, lcdMessage: action.message } };
     default:
@@ -81,18 +97,18 @@ function toyStateReducer(state: ToyState, action: ToyAction): ToyState {
 export function useToyState() {
   const [state, dispatch] = useReducer(toyStateReducer, initialToyState);
 
-  return {
-    state,
-    actions: {
-      powerOn: () => dispatch({ type: 'POWER_ON' }),
-      powerOff: () => dispatch({ type: 'POWER_OFF' }),
-      setMode: (mode: ToyState['mode']) => dispatch({ type: 'SET_MODE', mode }),
-      updateLcd: (message: string) => dispatch({ type: 'UPDATE_LCD', message }),
-      selectPad: (padId: string | null) => dispatch({ type: 'SELECT_PAD', padId }),
-      triggerAnimation: (animation: string | null) => dispatch({ type: 'TRIGGER_ANIMATION', animation }),
-      updateAudioSettings: (settings: Partial<ToyState['audio']>) => dispatch({ type: 'UPDATE_AUDIO_SETTINGS', settings }),
-      updateCustomization: (settings: Partial<ToyState['customization']>) => dispatch({ type: 'UPDATE_CUSTOMIZATION', settings }),
-      setError: (message: string) => dispatch({ type: 'SET_ERROR', message }),
-    },
+  const actions = {
+    powerOn: () => dispatch({ type: 'POWER_ON' }),
+    powerOff: () => dispatch({ type: 'POWER_OFF' }),
+    setMode: (mode: ToyState['mode']) => dispatch({ type: 'SET_MODE', mode }),
+    updateLcd: (message: string) => dispatch({ type: 'UPDATE_LCD', message }),
+    selectPad: (padId: string | null) => dispatch({ type: 'SELECT_PAD', padId }),
+    triggerAnimation: (animation: string | null) => dispatch({ type: 'TRIGGER_ANIMATION', animation }),
+    updateUi: (ui: Partial<ToyState['ui']>) => dispatch({ type: 'UPDATE_UI', ui }),
+    updateAudio: (audio: Partial<ToyState['audio']>) => dispatch({ type: 'UPDATE_AUDIO', audio }),
+    updateCustomization: (customization: Partial<ToyState['customization']>) => dispatch({ type: 'UPDATE_CUSTOMIZATION', customization }),
+    setError: (message: string) => dispatch({ type: 'SET_ERROR', message }),
   };
+
+  return { state, actions };
 }

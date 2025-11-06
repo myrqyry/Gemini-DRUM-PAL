@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { RecordedNote, RecordingSequence, validateRecordedNote } from '../../types/recording';
+import { RecordedNote, RecordingSequence, validateRecordedNote } from '../types/recording';
 
 type RecordingState = 'RECORDING' | 'PLAYING' | 'STOPPED';
 
