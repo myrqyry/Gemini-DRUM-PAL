@@ -1,6 +1,6 @@
 import React from 'react';
-import { PadConfig } from '../types';
-import Spinner from './Spinner';
+import { PadConfig } from '../../../types';
+import Spinner from '../../../components/Spinner';
 
 interface DrumPadProps {
   padConfig: PadConfig;

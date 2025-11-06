@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { playSound, initializeAudio } from '../services/audioService';
+import { playSound, initializeAudio } from '../../../services/audioService';
 
 export const useAudioManager = () => {
   const [audioInitialized, setAudioInitialized] = useState(false);

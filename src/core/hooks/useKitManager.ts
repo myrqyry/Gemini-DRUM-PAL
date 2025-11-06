@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { PadConfig } from '../types';
+import { PadConfig } from '../../types';
 
 export const useKitManager = (initialPads: PadConfig[]) => {
   const [pads, setPads] = useState<PadConfig[]>(initialPads);

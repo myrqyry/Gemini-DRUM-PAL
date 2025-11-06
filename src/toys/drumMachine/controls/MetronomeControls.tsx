@@ -1,5 +1,5 @@
 import React from 'react';
-import Metronome from '../Metronome';
+import Metronome from '../../../../components/Metronome';
 
 interface MetronomeControlsProps {
   isPoweredOn: boolean;
