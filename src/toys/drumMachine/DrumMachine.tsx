@@ -49,7 +49,7 @@ const DrumMachine: React.FC<ToyProps> = ({ config, soundEngine }) => {
 
   const [soundModel, setSoundModel] = useState('DEFAULT');
 
-  const currentShell = useMemo(() => SHELL_COLORS[shellColorIndex], [shellColorIndex]);
+  const currentShell = useMemo(() => config.shellColors[shellColorIndex], [shellColorIndex, config.shellColors]);
 
   const soundTimeoutsRef = React.useRef<Set<NodeJS.Timeout>>(new Set());
 
