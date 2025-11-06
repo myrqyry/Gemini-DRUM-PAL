@@ -71,7 +71,7 @@ const DrumMachine: React.FC<ToyProps> = ({ config, soundEngine }) => {
 
     soundEngine.playSound(pad.toneJsConfig, soundTimeoutsRef);
     setPads(prev => prev.map(p => p.id === padId ? { ...p, error: undefined } : p));
-    const animationType = PAD_ANIMATION_MAP[pad.id];
+    const animationType = config.animationMap[pad.id];
     if (animationType) {
         actions.triggerAnimation(animationType);
         setTimeout(() => actions.triggerAnimation(null), 700);
