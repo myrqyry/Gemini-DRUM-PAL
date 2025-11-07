@@ -94,7 +94,7 @@ const App: React.FC = () => {
     }
   }, []);
 
-  
+
   const showTemporaryMessage = useCallback((message: string, duration: number = 2000, nextState: AppState = 'IDLE') => {
     setLcdMessage(message);
     setAppState('GENERATING'); // Use a generic state to show the message
@@ -114,7 +114,7 @@ const App: React.FC = () => {
       setLcdMessage("AUDIO FAILED\nTO INITIALIZE");
     }
   };
-  
+
   useEffect(() => {
     if (appState === 'BOOTING') {
       const timer = setTimeout(() => {
@@ -229,7 +229,7 @@ const App: React.FC = () => {
 
   const handlePadClick = async (padId: string) => {
     if (activeAnimation || appState === 'BOOTING' || appState === 'OFF' || appState === 'GENERATING') return;
-    
+
     const pad = pads.find(p => p.id === padId);
     if (!pad) return;
 
@@ -261,10 +261,10 @@ const App: React.FC = () => {
       setSelectedPadId(null);
     }
   };
-  
+
   const handleCycleColor = () => setShellColorIndex((prev) => (prev + 1) % SHELL_COLORS.length);
   const handleToggleStyle = () => setIsTransparent(prev => !prev);
-  
+
   const handleStickerTrigger = () => {
     if (appState === 'OFF' || appState === 'BOOTING' || appState === 'GENERATING') return;
     const newCount = stickerClickCount + 1;
@@ -308,14 +308,14 @@ const App: React.FC = () => {
 
   const isPoweredOn = appState !== 'OFF';
   const isMenuMode = appState === 'MENU' || appState === 'EDITING_PAD';
-  
+
   const keychainClasses = `keychain-body relative w-[340px] h-[560px] sm:w-[360px] sm:h-[600px] rounded-[40px] p-4 sm:p-6 shadow-2xl transition-all duration-300 border-4 border-black/30 flex flex-col items-center justify-between ${isTransparent ? 'transparent-mode' : currentShell.solidClass}`;
   const keychainStyle = isTransparent ? { backgroundColor: currentShell.transparentRgba } : {};
   const textInsetClass = currentShell.isLight ? 'text-inset-dark' : 'text-inset-light';
 
   const getMenuButtonClasses = useMemo(() => {
     const base = 'w-full text-center px-3 py-1 text-sm font-bold rounded-lg shadow-md transition-all duration-200 border disabled:opacity-50 disabled:cursor-not-allowed';
-    
+
     if (isTransparent) {
         const { textColor, borderColor, bgColor } = currentShell;
         return `${base} ${textColor} ${borderColor} ${bgColor} border-opacity-50 bg-opacity-70`;
@@ -329,7 +329,7 @@ const App: React.FC = () => {
     <div className={keychainClasses} style={keychainStyle}>
         {isTransparent && <CircuitBoard />}
         {stickerUrl && <Sticker imageUrl={stickerUrl} rotation={stickerRotation} scale={stickerScale} />}
-        
+
         <KitsModal
             isOpen={isKitsModalOpen}
             onClose={() => setIsKitsModalOpen(false)}
@@ -346,9 +346,9 @@ const App: React.FC = () => {
             <div className={`w-3 h-3 rounded-full border-2 border-black/30 ${isPoweredOn ? 'bg-red-600 animate-pulse' : 'bg-gray-700'}`}></div>
         </div>
         <div onClick={handleStickerTrigger} className="absolute top-5 right-10 text-black/50 font-bold text-xs transform -rotate-12 cursor-pointer select-none transition-transform active:scale-90">MODEL-G</div>
-        
+
         <div className="w-full flex flex-col items-center mt-10">
-            <LcdScreen 
+            <LcdScreen
                 appState={appState}
                 message={lcdMessage}
                 promptValue={promptInputValue}
@@ -393,7 +393,7 @@ const App: React.FC = () => {
               })}
           </div>
         </SoundGenerationErrorBoundary>
-        
+
         <div className="w-full flex justify-between items-end pt-4 border-t-2 border-black/10">
           <DrumMachineControls
             isPoweredOn={isPoweredOn}
