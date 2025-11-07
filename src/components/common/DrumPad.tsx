@@ -4,16 +4,30 @@ import Spinner from './Spinner';
 
 interface DrumPadProps {
   padConfig: PadConfig;
-  onClick: (id: string) => void;
-  isSelected: boolean;
-  disabled: boolean;
-  isTransparent: boolean;
-  textColor: string;
-  textInsetClass: string;
-  isKeyPressed: boolean;
+  onClick: (padId: string) => void;
+  isSelected?: boolean;
+  disabled?: boolean;
+  isTransparent?: boolean;
+  textColor?: string;
+  textInsetClass?: string;
+  isKeyPressed?: boolean;
 }
 
-const DrumPad: React.FC<DrumPadProps> = ({ padConfig, onClick, isSelected, disabled, isTransparent, textColor, textInsetClass, isKeyPressed }) => {
+const DrumPad: React.FC<DrumPadProps> = ({
+  padConfig,
+  onClick,
+  isSelected = false,
+  disabled = false,
+  isTransparent = false,
+  textColor = 'text-white',
+  textInsetClass = 'text-inset-light',
+  isKeyPressed = false,
+}) => {
+  if (!padConfig || !onClick) {
+    console.error('DrumPad: Missing required props');
+    return null;
+  }
+
   const { id, name, color, isLoading, error } = padConfig;
 
   const baseClasses = "w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all duration-150 transform active:scale-90 shadow-lg border-4 border-black/20 disabled:opacity-60 disabled:cursor-not-allowed";
