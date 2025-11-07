@@ -1,31 +1,15 @@
 import React from 'react';
-import { useAppState } from './hooks/useAppState';
-import { useShellCustomization } from './hooks/useShellCustomization';
-import { useStickerCustomization } from './hooks/useStickerCustomization';
-import { useAudioManager } from './hooks/useAudioManager';
-import { useKitManager } from './hooks/useKitManager';
-import { usePadInteraction } from './hooks/usePadInteraction';
+import { useToy } from './hooks/useToy';
 import { DrumMachineLayout } from './components/DrumMachineLayout';
 import { parseKitFromUrl } from './utils/urlHelpers';
+import { soundEngine } from './services/audioService';
+import { toyConfig } from './config/toy.config';
 
 const App: React.FC = () => {
-  const appState = useAppState();
-  const shellCustomization = useShellCustomization();
-  const stickerCustomization = useStickerCustomization();
-  const audioManager = useAudioManager();
-  const kitManager = useKitManager(parseKitFromUrl());
-  const padInteraction = usePadInteraction({ appState, audioManager, kitManager });
+  const initialPads = parseKitFromUrl() || toyConfig.initialPads;
+  const toy = useToy(toyConfig, soundEngine, initialPads);
 
-  return (
-    <DrumMachineLayout
-      appState={appState}
-      shellCustomization={shellCustomization}
-      stickerCustomization={stickerCustomization}
-      audioManager={audioManager}
-      kitManager={kitManager}
-      padInteraction={padInteraction}
-    />
-  );
+  return <DrumMachineLayout toy={toy} />;
 };
 
 export default App;

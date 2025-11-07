@@ -1,81 +1,84 @@
 import React, { useState, useEffect } from 'react';
-import { useAppState } from '../hooks/useAppState';
-import { useShellCustomization } from './hooks/useShellCustomization';
-import { useStickerCustomization } from './hooks/useStickerCustomization';
-import { useAudioManager } from './hooks/useAudioManager';
-import { useKitManager } from './hooks/useKitManager';
-import { usePadInteraction } from './hooks/usePadInteraction';
-import CircuitBoard from './components/ui/CircuitBoard';
-import Sticker from './components/ui/Sticker';
-import KitsModal from './components/KitsModal';
-import PowerIcon from './components/icons/PowerIcon';
-import LcdScreen from './components/common/LcdScreen';
-import DrumPad from './components/common/DrumPad';
-import DrumMachineControls from './components/controls/DrumMachineControls';
-import MetronomeControls from './components/controls/MetronomeControls';
-import SpeakerGrill from './components/ui/SpeakerGrill';
-import SoundGenerationErrorBoundary from '../components/error/SoundGenerationErrorBoundary';
+import CircuitBoard from './ui/CircuitBoard';
+import Sticker from './ui/Sticker';
+import KitsModal from './KitsModal';
+import PowerIcon from './icons/PowerIcon';
+import LcdScreen from './common/LcdScreen';
+import DrumPad from './common/DrumPad';
+import DrumMachineControls from './controls/DrumMachineControls';
+import MetronomeControls from './controls/MetronomeControls';
+import SpeakerGrill from './ui/SpeakerGrill';
+import SoundGenerationErrorBoundary from './error/SoundGenerationErrorBoundary';
 import { PAD_LAYOUT_ORDER } from '../constants';
 import { KeyboardShortcutsOverlay } from './KeyboardShortcutsOverlay';
 
+import { useToy } from '../hooks/useToy';
 interface DrumMachineLayoutProps {
-  appState: ReturnType<typeof useAppState>;
-  shellCustomization: ReturnType<typeof useShellCustomization>;
-  stickerCustomization: ReturnType<typeof useStickerCustomization>;
-  audioManager: ReturnType<typeof useAudioManager>;
-  kitManager: ReturnType<typeof useKitManager>;
-  padInteraction: ReturnType<typeof usePadInteraction>;
+  toy: ReturnType<typeof useToy>;
 }
 
-export const DrumMachineLayout: React.FC<DrumMachineLayoutProps> = ({
-  appState,
-  shellCustomization,
-  stickerCustomization,
-  audioManager,
-  kitManager,
-  padInteraction,
-}) => {
+export const DrumMachineLayout: React.FC<DrumMachineLayoutProps> = ({ toy }) => {
   const {
-    appState: currentState,
-    lcdMessage,
-    promptValue,
-    onPromptChange,
-    handleMenuButtonClick,
-    handlePowerOn,
-    isPoweredOn,
-    isMenuMode,
-  } = appState;
-  const {
-    isTransparent,
+    state,
+    actions,
+    pads,
+    hotPads,
+    isTicking,
     currentShell,
+    handlePowerOn,
+    handlePadClick,
+    handleMenuButtonClick,
     handleCycleColor,
     handleToggleStyle,
-    textInsetClass,
-  } = shellCustomization;
-  const {
-    stickerUrl,
-    stickerRotation,
-    stickerScale,
     handleStickerTrigger,
-    stickerUrlInput,
-    onStickerUrlChange,
-    onStickerUrlSubmit,
-    onStickerTransformChange,
-  } = stickerCustomization;
-  const { playSound, isTicking, bpm, setBpm, isMetronomeOn, setIsMetronomeOn } =
-    audioManager;
-  const { pads, savedKits, handleSaveKit, handleLoadKit, handleDeleteKit } =
-    kitManager;
-  const {
-    handlePadClick,
-    selectedPadId,
-    hotPads,
+    handleStickerUrlSubmit,
+    handleShareKit,
+    handleStickerTransformChange,
     recordingState,
     handleRecord,
     handlePlay,
     handleStop,
     recordedSequence,
-  } = padInteraction;
+    savedKits,
+    handleSaveKit,
+    handleLoadKit,
+    handleDeleteKit,
+  } = toy;
+
+  const {
+    power,
+    mode,
+    ui,
+    audio,
+    customization
+  } = state;
+
+  const {
+    lcdMessage,
+    selectedPadId,
+    activeAnimation,
+    isKitsModalOpen,
+    promptInputValue,
+    stickerUrlInput,
+  } = ui;
+
+  const {
+    bpm,
+    isMetronomeOn
+  } = audio;
+
+  const {
+    isTransparent,
+    stickerUrl,
+    stickerRotation,
+    stickerScale,
+    soundModel
+  } = customization;
+
+  const {
+    setBpm,
+    setIsMetronomeOn
+  } = actions;
 
   const keychainClasses = `keychain-body relative w-[340px] h-[560px] sm:w-[360px] sm:h-[600px] rounded-[40px] p-4 sm:p-6 shadow-2xl transition-all duration-300 border-4 border-black/30 flex flex-col items-center justify-between ${
     isTransparent ? 'transparent-mode' : currentShell.solidClass
@@ -115,8 +118,8 @@ export const DrumMachineLayout: React.FC<DrumMachineLayoutProps> = ({
       />
 
       <KitsModal
-        isOpen={false}
-        onClose={() => {}}
+        isOpen={isKitsModalOpen}
+        onClose={() => actions.updateUi({ isKitsModalOpen: false })}
         savedKits={savedKits}
         onSave={handleSaveKit}
         onLoad={handleLoadKit}
@@ -126,7 +129,7 @@ export const DrumMachineLayout: React.FC<DrumMachineLayoutProps> = ({
       <div className="absolute top-5 left-6 flex items-center space-x-2">
         <button
           onClick={handlePowerOn}
-          disabled={isPoweredOn}
+          disabled={power !== 'OFF'}
           className="text-gray-900/70 disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label="Power on"
         >
@@ -134,7 +137,7 @@ export const DrumMachineLayout: React.FC<DrumMachineLayoutProps> = ({
         </button>
         <div
           className={`w-3 h-3 rounded-full border-2 border-black/30 ${
-            isPoweredOn ? 'bg-red-600 animate-pulse' : 'bg-gray-700'
+            power !== 'OFF' ? 'bg-red-600 animate-pulse' : 'bg-gray-700'
           }`}
         ></div>
       </div>
@@ -147,11 +150,11 @@ export const DrumMachineLayout: React.FC<DrumMachineLayoutProps> = ({
 
       <div className="w-full flex flex-col items-center mt-10">
         <LcdScreen
-          appState={currentState}
+          appState={mode}
           message={lcdMessage}
-          promptValue={promptValue}
-          onPromptChange={onPromptChange}
-          activeAnimation={null}
+          promptValue={promptInputValue}
+          onPromptChange={(value) => actions.updateUi({ promptInputValue: value })}
+          activeAnimation={activeAnimation}
           selectedPadName={
             pads.find((p) => p.id === selectedPadId)?.name || ''
           }
@@ -160,19 +163,19 @@ export const DrumMachineLayout: React.FC<DrumMachineLayoutProps> = ({
           currentColorName={currentShell.name}
           isTransparent={isTransparent}
           stickerUrlInput={stickerUrlInput}
-          onStickerUrlChange={onStickerUrlChange}
-          onStickerUrlSubmit={onStickerUrlSubmit}
+          onStickerUrlChange={(value) => actions.updateUi({ stickerUrlInput: value })}
+          onStickerUrlSubmit={handleStickerUrlSubmit}
           stickerRotation={stickerRotation}
           stickerScale={stickerScale}
-          onStickerTransformChange={onStickerTransformChange}
-          soundModel={'DEFAULT'}
-          onSoundModelChange={() => {}}
+          onStickerTransformChange={handleStickerTransformChange}
+          soundModel={soundModel}
+          onSoundModelChange={(model) => actions.updateCustomization({ soundModel: model })}
         />
       </div>
 
       <SoundGenerationErrorBoundary
         onError={(error) =>
-          appState.showTemporaryMessage(`ERROR: ${error.message}`, 2000, 'IDLE')
+          actions.showTemporaryMessage(`ERROR: ${error.message}`, 2000, 'IDLE')
         }
       >
         <div className="grid grid-cols-3 w-full max-w-xs sm:max-w-sm place-items-center gap-x-2 gap-y-1">
@@ -188,12 +191,12 @@ export const DrumMachineLayout: React.FC<DrumMachineLayoutProps> = ({
               <DrumPad
                 key={pad.id}
                 padConfig={pad}
-                onClick={handlePadClick}
+                onClick={() => handlePadClick(pad.id)}
                 isSelected={selectedPadId === pad.id}
-                disabled={!isPoweredOn}
+                disabled={power === 'OFF' || mode === 'GENERATING'}
                 isTransparent={isTransparent}
                 textColor={currentShell.textColor}
-                textInsetClass={textInsetClass}
+                textInsetClass={currentShell.textInsetClass}
                 isKeyPressed={!!hotPads[pad.id]}
               />
             );
@@ -203,21 +206,19 @@ export const DrumMachineLayout: React.FC<DrumMachineLayoutProps> = ({
 
       <div className="w-full flex justify-between items-end pt-4 border-t-2 border-black/10">
         <DrumMachineControls
-          isPoweredOn={isPoweredOn}
-          isMenuMode={isMenuMode}
-          appState={currentState}
+          power={power}
+          mode={mode}
           recordingState={recordingState}
-          getMenuButtonClasses={() => ''}
           handleMenuButtonClick={handleMenuButtonClick}
-          handleShareKit={() => {}}
-          setIsKitsModalOpen={() => {}}
+          handleShareKit={handleShareKit}
+          setIsKitsModalOpen={(isOpen) => actions.updateUi({ isKitsModalOpen: isOpen })}
           handleRecord={handleRecord}
           handlePlay={handlePlay}
           handleStop={handleStop}
           recordedSequence={recordedSequence}
         />
         <MetronomeControls
-          isPoweredOn={isPoweredOn}
+          isPoweredOn={power !== 'OFF'}
           isMetronomeOn={isMetronomeOn}
           bpm={bpm}
           isTicking={isTicking}
@@ -225,7 +226,7 @@ export const DrumMachineLayout: React.FC<DrumMachineLayoutProps> = ({
           setBpm={setBpm}
         />
 
-        <SpeakerGrill isPoweredOn={isPoweredOn} isTransparent={isTransparent} />
+        <SpeakerGrill isPoweredOn={power !== 'OFF'} isTransparent={isTransparent} />
       </div>
       <button
         onClick={() => setShowKeyboardHelp(true)}

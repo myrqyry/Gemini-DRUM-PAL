@@ -12,3 +12,4 @@ export type {
 } from './audio';
 
 export type { AppState } from './app';
+export type { ToyConfig, SoundEngine } from './toyTypes';

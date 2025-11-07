@@ -9,12 +9,14 @@ interface PadInteractionProps {
   appState: ReturnType<typeof useAppState>;
   audioManager: ReturnType<typeof useAudioManager>;
   kitManager: ReturnType<typeof useKitManager>;
+  handleGenerateSound: (padId: string, prompt: string) => Promise<void>;
 }
 
 export const usePadInteraction = ({
   appState,
   audioManager,
   kitManager,
+  handleGenerateSound,
 }: PadInteractionProps) => {
   const { appState: currentState, setAppState, setLcdMessage } = appState;
   const { playSound } = audioManager;
@@ -67,7 +69,7 @@ export const usePadInteraction = ({
         setAppState('EDITING_PAD');
       } else if (currentState === 'EDITING_PAD') {
         if (padId === selectedPadId) {
-          // handleGenerateSound(padId, promptInputValue);
+          handleGenerateSound(padId, promptInputValue);
         } else {
           triggerPad(padId);
         }
