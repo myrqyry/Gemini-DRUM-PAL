@@ -203,3 +203,9 @@ export const playSound = async (
 
   timeoutsRef?.current.add(timeoutId);
 };
+
+export const soundEngine = {
+  initializeAudio,
+  playSound,
+  getAudioContextState,
+};
