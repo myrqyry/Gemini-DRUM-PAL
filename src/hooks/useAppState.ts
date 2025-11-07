@@ -15,7 +15,7 @@ export const useAppState = () => {
     setAppState('GENERATING');
     setTimeout(() => {
       setAppState(nextState);
-      setLcdMessage(nextState === 'IDLE' ? 'GEMINI\nDRUM-PAL' : 'Click pad to edit');
+      setLcdMessage(nextState === 'IDLE' ? WELCOME_MESSAGE : 'Click pad to edit');
     }, duration);
   }, []);
 
