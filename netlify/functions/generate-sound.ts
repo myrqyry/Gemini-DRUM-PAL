@@ -1,6 +1,6 @@
 import { Handler } from '@netlify/functions';
 import { GoogleGenAI } from '@google/genai';
-import { TONE_JS_SOUND_SCHEMA } from '../../services/geminiSchema';
+import { TONE_JS_SOUND_SCHEMA, TONE_JS_SOUND_JSON_SCHEMA } from '../../src/services/geminiSchema';
 
 const API_KEY = process.env.GEMINI_API_KEY;
 
@@ -58,12 +58,11 @@ const handler: Handler = async (event) => {
 
     const fullPrompt = `${PROMPT_PREFIX}\n${PROMPT_EXAMPLES}\nGenerate a JSON object for the following sound description:\n${prompt}`;
 
-    const genAI = new GoogleGenAI(API_KEY);
-    const geminiModel = genAI.getGenerativeModel({
+    const geminiModel = ai.getGenerativeModel({
       model: model,
       generationConfig: {
         responseMimeType: "application/json",
-        responseSchema: TONE_JS_SOUND_SCHEMA,
+        responseSchema: TONE_JS_SOUND_JSON_SCHEMA,
         temperature: 0.7,
         topP: 0.95,
         topK: 50,
@@ -72,7 +71,7 @@ const handler: Handler = async (event) => {
 
     const result = await geminiModel.generateContent(fullPrompt);
     const response = await result.response;
-    const soundConfig = JSON.parse(response.text());
+    const soundConfig = TONE_JS_SOUND_SCHEMA.parse(JSON.parse(response.text()));
 
 
     return {
