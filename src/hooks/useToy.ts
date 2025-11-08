@@ -3,15 +3,15 @@ import { useToyState } from './useToyState';
 import { useKitManager } from './useKitManager';
 import { useAudioManager } from './useAudioManager';
 import { useRecording } from './useRecording';
-import { getSoundConfigFromPrompt } from '../../services/geminiService';
-import { getAudioContextState } from '../../services/audioService';
-import { SecurityUtils } from '../../utils/security';
-import { getPadIdFromKey } from '../../utils/keyboardMapping';
-import { KitService } from '../../services/kitService';
-import { AppError, createErrorHandler } from '../../utils/errorHandling';
-import { WELCOME_MESSAGE, METRONOME_TICK_CONFIG, GEMINI_MODEL_NAME, GEMINI_MODEL_NAME_EXPERIMENTAL } from '../../constants';
-import { ToyConfig, SoundEngine } from '../../types/toyTypes';
-import { PadConfig } from '../../types';
+import { getSoundConfigFromPrompt } from '@/services/geminiService';
+import { getAudioContextState } from '@/services/audioService';
+import { SecurityUtils } from '@/utils/security';
+import { getPadIdFromKey } from '@/utils/keyboardMapping';
+import { KitService } from '@/services/kitService';
+import { AppError, createErrorHandler } from '@/utils/errorHandling';
+import { WELCOME_MESSAGE, METRONOME_TICK_CONFIG, GEMINI_MODEL_NAME, GEMINI_MODEL_NAME_EXPERIMENTAL } from '@/constants';
+import { ToyConfig, SoundEngine } from '@/types/toyTypes';
+import { PadConfig } from '@/types';
 
 export const useToy = (config: ToyConfig, soundEngine: SoundEngine, initialPads: PadConfig[]) => {
   const { state, actions } = useToyState();

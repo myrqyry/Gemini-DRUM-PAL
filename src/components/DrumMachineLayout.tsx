@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import CircuitBoard from './ui/CircuitBoard';
-import Sticker from './ui/Sticker';
-import KitsModal from './KitsModal';
-import PowerIcon from './icons/PowerIcon';
-import LcdScreen from './common/LcdScreen';
-import DrumPad from './common/DrumPad';
-import DrumMachineControls from './controls/DrumMachineControls';
-import MetronomeControls from './controls/MetronomeControls';
-import SpeakerGrill from './ui/SpeakerGrill';
-import SoundGenerationErrorBoundary from './error/SoundGenerationErrorBoundary';
-import { PAD_LAYOUT_ORDER } from '../constants';
-import { KeyboardShortcutsOverlay } from './KeyboardShortcutsOverlay';
+import CircuitBoard from '@/components/ui/CircuitBoard';
+import Sticker from '@/components/ui/Sticker';
+import KitsModal from '@/components/modals/KitsModal';
+import PowerIcon from '@/components/icons/PowerIcon';
+import LcdScreen from '@/components/common/LcdScreen';
+import DrumPad from '@/components/common/DrumPad';
+import DrumMachineControls from '@/components/controls/DrumMachineControls';
+import MetronomeControls from '@/components/controls/MetronomeControls';
+import SpeakerGrill from '@/components/ui/SpeakerGrill';
+import SoundGenerationErrorBoundary from '@/components/error/SoundGenerationErrorBoundary';
+import { PAD_LAYOUT_ORDER } from '@/constants';
+import { KeyboardShortcutsOverlay } from '@/components/KeyboardShortcutsOverlay';
 
-import { useToy } from '../hooks/useToy';
+import { useToy } from '@/hooks/useToy';
 interface DrumMachineLayoutProps {
   toy: ReturnType<typeof useToy>;
 }

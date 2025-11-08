@@ -1,9 +1,9 @@
 import React from 'react';
-import SpinnerIcon from './icons/SpinnerIcon';
-import * as Animations from './animations';
-import WelcomeScreen from './WelcomeScreen';
-import BootAnimation from './BootAnimation';
-import { WELCOME_MESSAGE } from '../constants';
+import SpinnerIcon from '@/components/icons/SpinnerIcon';
+import * as Animations from '@/components/common/animations';
+import WelcomeScreen from '@/components/common/WelcomeScreen';
+import BootAnimation from '@/components/common/BootAnimation';
+import { WELCOME_MESSAGE } from '@/constants';
 
 type AppState = 'OFF' | 'BOOTING' | 'IDLE' | 'MENU' | 'EDITING_PAD' | 'GENERATING' | 'ERROR' | 'STICKER_PROMPT';
 
