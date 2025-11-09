@@ -20,7 +20,7 @@ export const useToy = (config: ToyConfig, soundEngine: SoundEngine, initialPads:
   const { state, actions } = useToyState();
   const { power, mode, ui, audio, customization } = state;
   const { lcdMessage, selectedPadId, activeAnimation, isKitsModalOpen, promptInputValue, stickerUrlInput } = ui;
-  const { bpm, isMetronomeOn } = audio;
+  const { bpm, isMetronomeOn, isToyModeEnabled } = audio;
   const { stickerRotation, stickerScale, soundModel } = customization;
   const { shellColor, isTransparent: themeIsTransparent, stickerUrl: themeStickerUrl, handleCycleTheme, handleSetTheme } = useShellCustomization();
 
@@ -73,7 +73,7 @@ export const useToy = (config: ToyConfig, soundEngine: SoundEngine, initialPads:
 
     recordNote(padId);
 
-    soundEngine.playSound(pad.toneJsConfig, soundTimeoutsRef, pad.toneJsConfigB, pad.morphValue);
+    soundEngine.playSound(pad.toneJsConfig, soundTimeoutsRef, pad.toneJsConfigB, pad.morphValue, isToyModeEnabled);
     setPads(prev => prev.map(p => p.id === padId ? { ...p, error: undefined } : p));
     const animationType = config.animationMap[pad.id];
     if (animationType) {
@@ -125,7 +125,7 @@ export const useToy = (config: ToyConfig, soundEngine: SoundEngine, initialPads:
   useEffect(() => {
     if (isMetronomeOn && power !== 'OFF') {
       const interval = setInterval(() => {
-        soundEngine.playSound(METRONOME_TICK_CONFIG);
+        soundEngine.playSound(METRONOME_TICK_CONFIG, soundTimeoutsRef, undefined, 0, isToyModeEnabled);
         setIsTicking(true);
         setTimeout(() => setIsTicking(false), 100);
       }, (60 / bpm) * 1000);
@@ -394,6 +394,7 @@ export const useToy = (config: ToyConfig, soundEngine: SoundEngine, initialPads:
     handleSaveKit,
     handleLoadKit,
     handleDeleteKit,
+    toggleToyMode: actions.toggleToyMode,
     undo: actions.undo,
     redo: actions.redo,
     morphValue,

@@ -220,6 +220,7 @@ export const DrumMachineLayout: React.FC<DrumMachineLayoutProps> = ({ toy }) => 
           recordedSequence={recordedSequence}
           undo={toy.undo}
           redo={toy.redo}
+          toggleToyMode={toy.toggleToyMode}
         />
         <MetronomeControls
           isPoweredOn={power !== 'OFF'}
