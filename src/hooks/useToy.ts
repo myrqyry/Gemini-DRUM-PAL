@@ -51,8 +51,9 @@ export const useToy = (config: ToyConfig, soundEngine: SoundEngine, initialPads:
   };
 
   const currentShell = useMemo(() => {
-    const color = config.shellColors.find(c => c.solidClass.includes(shellColor.replace('#', '')));
-    return color || config.shellColors[0];
+    const theme = THEMES.find(t => t.shellColor === shellColor);
+    const shell = config.shellColors.find(c => c.name === theme?.shellName);
+    return shell || config.shellColors[0];
   }, [shellColor, config.shellColors]);
 
   const soundTimeoutsRef = React.useRef<Set<NodeJS.Timeout>>(new Set());
@@ -176,7 +177,7 @@ export const useToy = (config: ToyConfig, soundEngine: SoundEngine, initialPads:
 
       KitService.saveSoundConfig(prompt, newConfig);
 
-      setPads(prev => prev.map(p => {
+      const newPads = pads.map(p => {
         if (p.id === padId) {
           const newPad = {
             ...p,
@@ -192,14 +193,15 @@ export const useToy = (config: ToyConfig, soundEngine: SoundEngine, initialPads:
           return newPad;
         }
         return p;
-      }));
+      });
+      setPads(newPads);
 
       if (!isPreconfig) {
         showTemporaryMessage("SUCCESS!", 1500, 'IDLE');
       }
 
       actions.updateHistory(
-        [...state.history.slice(0, state.historyIndex + 1), pads],
+        [...state.history.slice(0, state.historyIndex + 1), newPads],
         state.historyIndex + 1
       );
     } catch (error) {

@@ -32,7 +32,7 @@ const DrumMachineControls: React.FC<DrumMachineControlsProps> = React.memo(({
   redo,
 }) => {
   const isPoweredOn = power !== 'OFF';
-  const buttonClasses = "w-1/3";
+  const buttonClasses = "flex-1";
   return (
     <div className="flex flex-col space-y-2 w-1/3">
       <div className="flex space-x-1">
