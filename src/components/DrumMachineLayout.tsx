@@ -24,6 +24,7 @@ export const DrumMachineLayout: React.FC<DrumMachineLayoutProps> = ({ toy }) => 
     pads,
     hotPads,
     isTicking,
+    isLcdFlickering,
     currentShell,
     handlePowerOn,
     handlePadClick,
@@ -128,7 +129,7 @@ export const DrumMachineLayout: React.FC<DrumMachineLayoutProps> = ({ toy }) => 
       <div className="absolute top-5 left-6 flex items-center space-x-2">
         <button
           onClick={handlePowerOn}
-          disabled={power !== 'OFF'}
+          disabled={power.status !== 'OFF'}
           className="text-gray-900/70 disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label="Power on"
         >
@@ -136,7 +137,7 @@ export const DrumMachineLayout: React.FC<DrumMachineLayoutProps> = ({ toy }) => 
         </button>
         <div
           className={`w-3 h-3 rounded-full border-2 border-black/30 ${
-            power !== 'OFF' ? 'bg-red-600 animate-pulse' : 'bg-gray-700'
+            power.status !== 'OFF' ? 'bg-red-600 animate-pulse' : 'bg-gray-700'
           }`}
         ></div>
       </div>
@@ -149,6 +150,7 @@ export const DrumMachineLayout: React.FC<DrumMachineLayoutProps> = ({ toy }) => 
 
       <div className="w-full flex flex-col items-center mt-10">
         <LcdScreen
+          isFlickering={isLcdFlickering}
           appState={mode}
           message={lcdMessage}
           promptValue={promptInputValue}
@@ -168,6 +170,9 @@ export const DrumMachineLayout: React.FC<DrumMachineLayoutProps> = ({ toy }) => 
           onStickerTransformChange={handleStickerTransformChange}
           soundModel={soundModel}
           onSoundModelChange={(model) => actions.updateCustomization({ soundModel: model })}
+          isWellLovedEnabled={customization.isWellLovedEnabled}
+          onToggleWellLovedMode={actions.toggleWellLovedMode}
+          batteryLevel={power.level}
           morphValue={toy.morphValue}
           onMorphChange={toy.handleMorphChange}
           editingSound={toy.editingSound}
@@ -195,7 +200,7 @@ export const DrumMachineLayout: React.FC<DrumMachineLayoutProps> = ({ toy }) => 
                 padConfig={pad}
                 onClick={() => handlePadClick(pad.id)}
                 isSelected={selectedPadId === pad.id}
-                disabled={power === 'OFF' || mode === 'GENERATING'}
+                disabled={power.status === 'OFF' || mode === 'GENERATING'}
                 isTransparent={isTransparent}
                 textColor={currentShell.textColor}
                 textInsetClass={currentShell.textInsetClass}
@@ -208,7 +213,7 @@ export const DrumMachineLayout: React.FC<DrumMachineLayoutProps> = ({ toy }) => 
 
       <div className="w-full flex justify-between items-end pt-4 border-t-2 border-black/10">
         <DrumMachineControls
-          power={power}
+          power={power.status}
           mode={mode}
           recordingState={recordingState}
           handleMenuButtonClick={handleMenuButtonClick}
@@ -223,7 +228,7 @@ export const DrumMachineLayout: React.FC<DrumMachineLayoutProps> = ({ toy }) => 
           toggleToyMode={toy.toggleToyMode}
         />
         <MetronomeControls
-          isPoweredOn={power !== 'OFF'}
+          isPoweredOn={power.status !== 'OFF'}
           isMetronomeOn={isMetronomeOn}
           bpm={bpm}
           isTicking={isTicking}
@@ -231,7 +236,7 @@ export const DrumMachineLayout: React.FC<DrumMachineLayoutProps> = ({ toy }) => 
           setBpm={setBpm}
         />
 
-        <SpeakerGrill isPoweredOn={power !== 'OFF'} isTransparent={isTransparent} />
+        <SpeakerGrill isPoweredOn={power.status !== 'OFF'} isTransparent={isTransparent} />
       </div>
       <button
         onClick={() => setShowKeyboardHelp(true)}

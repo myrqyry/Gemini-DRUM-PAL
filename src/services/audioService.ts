@@ -150,7 +150,8 @@ export const playSound = async (
   timeoutsRef: React.MutableRefObject<Set<NodeJS.Timeout>>,
   soundConfigB?: ToneJsSoundConfig | undefined,
   morphValue: number = 0,
-  isToyModeEnabled: boolean = false
+  isToyModeEnabled: boolean = false,
+  batteryLevel: number = 100
 ): Promise<void> => {
   if (!soundConfigA) {
     console.warn('No sound configuration provided to playSound.');
@@ -173,6 +174,11 @@ export const playSound = async (
 
   const instrument = createInstrument(soundConfig);
   if (!instrument) return;
+
+  if (batteryLevel < 20) {
+    const detuneAmount = (1 - batteryLevel / 20) * -200; // Detune up to 200 cents
+    instrument.set({ detune: detuneAmount });
+  }
 
   const effectsChain: Tone.ToneAudioNode[] = [];
   if (soundConfig.effects && soundConfig.effects.length > 0) {

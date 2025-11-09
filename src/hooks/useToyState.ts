@@ -2,7 +2,10 @@ import { useReducer } from 'react';
 import { WELCOME_MESSAGE } from '../../constants';
 
 interface ToyState {
-  power: 'OFF' | 'BOOTING' | 'ON';
+  power: {
+    level: number; // 0-100
+    status: 'OFF' | 'BOOTING' | 'ON';
+  };
   mode: 'IDLE' | 'MENU' | 'EDITING' | 'RECORDING' | 'GENERATING' | 'ERROR' | 'STICKER_PROMPT';
   ui: {
     lcdMessage: string;
@@ -21,6 +24,7 @@ interface ToyState {
     stickerRotation: number;
     stickerScale: number;
     soundModel: 'DEFAULT' | 'EXPERIMENTAL';
+    isWellLovedEnabled: boolean;
   };
   history: PadConfig[][];
   historyIndex: number;
@@ -29,6 +33,7 @@ interface ToyState {
 type ToyAction =
   | { type: 'POWER_ON' }
   | { type: 'POWER_OFF' }
+  | { type: 'DEPLETE_BATTERY' }
   | { type: 'UNDO' }
   | { type: 'REDO' }
   | { type: 'UPDATE_HISTORY'; history: PadConfig[][]; historyIndex: number }
@@ -39,11 +44,15 @@ type ToyAction =
   | { type: 'UPDATE_UI'; ui: Partial<ToyState['ui']> }
   | { type: 'UPDATE_AUDIO'; audio: Partial<ToyState['audio']> }
   | { type: 'TOGGLE_TOY_MODE' }
+  | { type: 'TOGGLE_WELL_LOVED_MODE' }
   | { type: 'UPDATE_CUSTOMIZATION'; customization: Partial<ToyState['customization']> }
   | { type: 'SET_ERROR'; message: string };
 
 const initialToyState: ToyState = {
-  power: 'OFF',
+  power: {
+    level: 100,
+    status: 'OFF',
+  },
   mode: 'IDLE',
   ui: {
     lcdMessage: '',
@@ -62,6 +71,7 @@ const initialToyState: ToyState = {
     stickerRotation: 0,
     stickerScale: 1,
     soundModel: 'DEFAULT',
+    isWellLovedEnabled: false,
   },
   history: [],
   historyIndex: 0,
@@ -70,9 +80,17 @@ const initialToyState: ToyState = {
 function toyStateReducer(state: ToyState, action: ToyAction): ToyState {
   switch (action.type) {
     case 'POWER_ON':
-      return { ...state, power: 'BOOTING' };
+      return { ...state, power: { ...state.power, status: 'BOOTING' } };
     case 'POWER_OFF':
       return initialToyState;
+    case 'DEPLETE_BATTERY':
+      return {
+        ...state,
+        power: {
+          ...state.power,
+          level: Math.max(0, state.power.level - 0.1),
+        },
+      };
     case 'UNDO':
       return {
         ...state,
@@ -110,6 +128,8 @@ function toyStateReducer(state: ToyState, action: ToyAction): ToyState {
         return { ...state, audio: { ...state.audio, ...action.audio } };
     case 'TOGGLE_TOY_MODE':
         return { ...state, audio: { ...state.audio, isToyModeEnabled: !state.audio.isToyModeEnabled } };
+    case 'TOGGLE_WELL_LOVED_MODE':
+        return { ...state, customization: { ...state.customization, isWellLovedEnabled: !state.customization.isWellLovedEnabled } };
     case 'UPDATE_CUSTOMIZATION':
         return { ...state, customization: { ...state.customization, ...action.customization } };
     case 'SET_ERROR':
@@ -125,6 +145,7 @@ export function useToyState() {
   const actions = {
     powerOn: () => dispatch({ type: 'POWER_ON' }),
     powerOff: () => dispatch({ type: 'POWER_OFF' }),
+    depleteBattery: () => dispatch({ type: 'DEPLETE_BATTERY' }),
     undo: () => dispatch({ type: 'UNDO' }),
     redo: () => dispatch({ type: 'REDO' }),
     updateHistory: (history: PadConfig[][], historyIndex: number) =>
@@ -136,6 +157,7 @@ export function useToyState() {
     updateUi: (ui: Partial<ToyState['ui']>) => dispatch({ type: 'UPDATE_UI', ui }),
     updateAudio: (audio: Partial<ToyState['audio']>) => dispatch({ type: 'UPDATE_AUDIO', audio }),
     toggleToyMode: () => dispatch({ type: 'TOGGLE_TOY_MODE' }),
+    toggleWellLovedMode: () => dispatch({ type: 'TOGGLE_WELL_LOVED_MODE' }),
     updateCustomization: (customization: Partial<ToyState['customization']>) => dispatch({ type: 'UPDATE_CUSTOMIZATION', customization }),
     setError: (message: string) => dispatch({ type: 'SET_ERROR', message }),
   };
