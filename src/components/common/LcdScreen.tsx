@@ -155,7 +155,7 @@ const LcdScreen: React.FC<LcdScreenProps> = (props) => {
   return (
     <div className={`h-40 w-full rounded-md p-2 flex flex-col items-center justify-center font-mono text-xl relative overflow-hidden transition-colors duration-500 ${bgClasses} ${flickerClass}`}>
       <div className="absolute top-2 right-2 text-xs">
-        BATT: {Math.floor(batteryLevel)}%
+        BATT: {Math.round(batteryLevel)}%
       </div>
       {isWellLovedEnabled && <DeadPixelsOverlay />}
       <div className="absolute inset-0 lcd-screen-bg opacity-80"></div>

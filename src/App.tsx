@@ -1,15 +1,15 @@
-import React from 'react';
-import { useToy } from './hooks/useToy';
-import { DrumMachineLayout } from './components/DrumMachineLayout';
-import { parseKitFromUrl } from './utils/urlHelpers';
-import { soundEngine } from './services/audioService';
-import { toyConfig } from './config/toy.config';
+import React, { useState } from 'react';
+import { DrumPal } from './toys/DrumPal/DrumPal';
+import ToySelector from './components/ToySelector';
 
 const App: React.FC = () => {
-  const initialPads = parseKitFromUrl() || toyConfig.initialPads;
-  const toy = useToy(toyConfig, soundEngine, initialPads);
+  const [selectedToy, setSelectedToy] = useState<string | null>(null);
 
-  return <DrumMachineLayout toy={toy} />;
+  if (!selectedToy) {
+    return <ToySelector onSelectToy={setSelectedToy} />;
+  }
+
+  return <DrumPal />;
 };
 
 export default App;

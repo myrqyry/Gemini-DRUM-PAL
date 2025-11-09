@@ -11,13 +11,14 @@ import SpeakerGrill from '@/components/ui/SpeakerGrill';
 import SoundGenerationErrorBoundary from '@/components/error/SoundGenerationErrorBoundary';
 import { PAD_LAYOUT_ORDER } from '@/constants';
 import { KeyboardShortcutsOverlay } from '@/components/KeyboardShortcutsOverlay';
-
 import { useToy } from '@/hooks/useToy';
-interface DrumMachineLayoutProps {
-  toy: ReturnType<typeof useToy>;
-}
+import { toyConfig } from '@/config/toy.config';
+import { soundEngine } from '@/services/audioService';
+import { parseKitFromUrl } from '@/utils/urlHelpers';
 
-export const DrumMachineLayout: React.FC<DrumMachineLayoutProps> = ({ toy }) => {
+export const DrumPal: React.FC = () => {
+  const initialPads = parseKitFromUrl() || toyConfig.initialPads;
+  const toy = useToy(toyConfig, soundEngine, initialPads);
   const {
     state,
     actions,

@@ -9,9 +9,8 @@ const DeadPixelsOverlay: React.FC = () => {
   const [pixels, setPixels] = React.useState<DeadPixel[]>([]);
 
   React.useEffect(() => {
-    const NUM_DEAD_PIXELS = 5;
     const newPixels: DeadPixel[] = [];
-    for (let i = 0; i < NUM_DEAD_PIXELS; i++) {
+    for (let i = 0; i < 5; i++) {
       newPixels.push({
         id: i,
         style: {
