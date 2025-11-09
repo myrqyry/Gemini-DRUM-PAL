@@ -19,9 +19,10 @@ import { PadConfig } from '@/types';
 export const useToy = (config: ToyConfig, soundEngine: SoundEngine, initialPads: PadConfig[]) => {
   const { state, actions } = useToyState();
   const { power, mode, ui, audio, customization } = state;
+  const { level: batteryLevel, status: powerStatus } = power;
   const { lcdMessage, selectedPadId, activeAnimation, isKitsModalOpen, promptInputValue, stickerUrlInput } = ui;
   const { bpm, isMetronomeOn, isToyModeEnabled } = audio;
-  const { stickerRotation, stickerScale, soundModel } = customization;
+  const { stickerRotation, stickerScale, soundModel, isWellLovedEnabled } = customization;
   const { shellColor, isTransparent: themeIsTransparent, stickerUrl: themeStickerUrl, handleCycleTheme, handleSetTheme } = useShellCustomization();
 
 
@@ -34,6 +35,15 @@ export const useToy = (config: ToyConfig, soundEngine: SoundEngine, initialPads:
   const [isApiKeyMissing, setIsApiKeyMissing] = useState(false);
   const [morphValue, setMorphValue] = useState(0);
   const [editingSound, setEditingSound] = useState<'A' | 'B'>('A');
+  const [isLcdFlickering, setIsLcdFlickering] = useState(false);
+
+  useEffect(() => {
+    if (batteryLevel < 20) {
+      setIsLcdFlickering(true);
+    } else {
+      setIsLcdFlickering(false);
+    }
+  }, [batteryLevel]);
 
   const handleToggleEditingSound = () => {
     setEditingSound(prev => (prev === 'A' ? 'B' : 'A'));
@@ -71,17 +81,27 @@ export const useToy = (config: ToyConfig, soundEngine: SoundEngine, initialPads:
         return false;
     }
 
-    recordNote(padId);
+    const trigger = () => {
+        recordNote(padId);
 
-    soundEngine.playSound(pad.toneJsConfig, soundTimeoutsRef, pad.toneJsConfigB, pad.morphValue, isToyModeEnabled);
+        actions.depleteBattery();
+    soundEngine.playSound(pad.toneJsConfig, soundTimeoutsRef, pad.toneJsConfigB, pad.morphValue, isToyModeEnabled, batteryLevel);
     setPads(prev => prev.map(p => p.id === padId ? { ...p, error: undefined } : p));
     const animationType = config.animationMap[pad.id];
     if (animationType) {
         actions.triggerAnimation(animationType);
         setTimeout(() => actions.triggerAnimation(null), 700);
     }
+    };
+
+    if (isWellLovedEnabled && Math.random() < 0.2) {
+      setTimeout(trigger, Math.random() * 200);
+    } else {
+      trigger();
+    }
+
     return true;
-  }, [pads, setPads, actions, soundEngine, config.animationMap]);
+  }, [pads, setPads, actions, soundEngine, config.animationMap, isWellLovedEnabled, batteryLevel, recordNote, isToyModeEnabled]);
 
   const { recordingState, handleRecord, handlePlay, handleStop, recordNote, recordedSequence } = useRecording(triggerPad, bpm);
 
@@ -103,7 +123,7 @@ export const useToy = (config: ToyConfig, soundEngine: SoundEngine, initialPads:
   }, [actions]);
 
   const handlePowerOn = async () => {
-    if (power !== 'OFF') return;
+    if (powerStatus !== 'OFF') return;
     const success = await initializeAudio();
     if (success) {
       actions.powerOn();
@@ -113,19 +133,20 @@ export const useToy = (config: ToyConfig, soundEngine: SoundEngine, initialPads:
   };
 
   useEffect(() => {
-    if (power === 'BOOTING') {
+    if (powerStatus === 'BOOTING') {
       const timer = setTimeout(() => {
         actions.setMode('IDLE');
         actions.updateLcd(WELCOME_MESSAGE);
       }, 2500);
       return () => clearTimeout(timer);
     }
-  }, [power, actions]);
+  }, [powerStatus, actions]);
 
   useEffect(() => {
-    if (isMetronomeOn && power !== 'OFF') {
+    if (isMetronomeOn && powerStatus !== 'OFF') {
       const interval = setInterval(() => {
-        soundEngine.playSound(METRONOME_TICK_CONFIG, soundTimeoutsRef, undefined, 0, isToyModeEnabled);
+        actions.depleteBattery();
+        soundEngine.playSound(METRONOME_TICK_CONFIG, undefined, undefined, 0, isToyModeEnabled, batteryLevel);
         setIsTicking(true);
         setTimeout(() => setIsTicking(false), 100);
       }, (60 / bpm) * 1000);
@@ -262,7 +283,7 @@ export const useToy = (config: ToyConfig, soundEngine: SoundEngine, initialPads:
   }, [mode, triggerPad]);
 
   const handlePadClick = async (padId: string) => {
-    if (activeAnimation || power === 'BOOTING' || power === 'OFF' || mode === 'GENERATING') return;
+    if (activeAnimation || powerStatus === 'BOOTING' || powerStatus === 'OFF' || mode === 'GENERATING') return;
 
     const pad = pads.find(p => p.id === padId);
     if (!pad) return;
@@ -296,7 +317,7 @@ export const useToy = (config: ToyConfig, soundEngine: SoundEngine, initialPads:
   };
 
   const handleStickerTrigger = () => {
-    if (power === 'OFF' || power === 'BOOTING' || mode === 'GENERATING') return;
+    if (powerStatus === 'OFF' || powerStatus === 'BOOTING' || mode === 'GENERATING') return;
     const newCount = stickerClickCount + 1;
     setStickerClickCount(newCount);
     if (newCount >= 5) {
@@ -376,6 +397,7 @@ export const useToy = (config: ToyConfig, soundEngine: SoundEngine, initialPads:
     pads,
     hotPads,
     isTicking,
+    isLcdFlickering,
     currentShell,
     handlePowerOn,
     handlePadClick,
@@ -395,6 +417,7 @@ export const useToy = (config: ToyConfig, soundEngine: SoundEngine, initialPads:
     handleLoadKit,
     handleDeleteKit,
     toggleToyMode: actions.toggleToyMode,
+    toggleWellLovedMode: actions.toggleWellLovedMode,
     undo: actions.undo,
     redo: actions.redo,
     morphValue,

@@ -2,12 +2,14 @@ import { ToyConfig } from '../types/toyTypes';
 
 export const toyConfig: ToyConfig = {
   shellColors: [
-    { name: 'Red', solidClass: 'bg-red-500', transparentRgba: 'rgba(239, 68, 68, 0.5)', textColor: 'text-white', textInsetClass: 'text-red-900' },
-    { name: 'Blue', solidClass: 'bg-blue-500', transparentRgba: 'rgba(59, 130, 246, 0.5)', textColor: 'text-white', textInsetClass: 'text-blue-900' },
-    { name: 'Green', solidClass: 'bg-green-500', transparentRgba: 'rgba(34, 197, 94, 0.5)', textColor: 'text-white', textInsetClass: 'text-green-900' },
-    { name: 'Yellow', solidClass: 'bg-yellow-500', transparentRgba: 'rgba(234, 179, 8, 0.5)', textColor: 'text-black', textInsetClass: 'text-yellow-900' },
-    { name: 'Purple', solidClass: 'bg-purple-500', transparentRgba: 'rgba(168, 85, 247, 0.5)', textColor: 'text-white', textInsetClass: 'text-purple-900' },
-    { name: 'Pink', solidClass: 'bg-pink-500', transparentRgba: 'rgba(236, 72, 153, 0.5)', textColor: 'text-white', textInsetClass: 'text-pink-900' },
+    { name: 'SLATE', solidClass: 'bg-gray-600', transparentRgba: 'rgba(75, 85, 99, 0.5)', textColor: 'text-white', textInsetClass: 'text-gray-900' },
+    { name: 'RED', solidClass: 'bg-red-500', transparentRgba: 'rgba(239, 68, 68, 0.5)', textColor: 'text-white', textInsetClass: 'text-red-900' },
+    { name: 'BLUE', solidClass: 'bg-blue-500', transparentRgba: 'rgba(59, 130, 246, 0.5)', textColor: 'text-white', textInsetClass: 'text-blue-900' },
+    { name: 'GREEN', solidClass: 'bg-green-500', transparentRgba: 'rgba(34, 197, 94, 0.5)', textColor: 'text-white', textInsetClass: 'text-green-900' },
+    { name: 'YELLOW', solidClass: 'bg-yellow-500', transparentRgba: 'rgba(234, 179, 8, 0.5)', textColor: 'text-black', textInsetClass: 'text-yellow-900' },
+    { name: 'VIOLET', solidClass: 'bg-violet-700', transparentRgba: 'rgba(109, 40, 217, 0.5)', textColor: 'text-white', textInsetClass: 'text-violet-900' },
+    { name: 'FUCHSIA', solidClass: 'bg-fuchsia-500', transparentRgba: 'rgba(217, 70, 239, 0.5)', textColor: 'text-white', textInsetClass: 'text-fuchsia-900' },
+    { name: 'PINK', solidClass: 'bg-pink-400', transparentRgba: 'rgba(244, 114, 182, 0.5)', textColor: 'text-white', textInsetClass: 'text-pink-900' },
   ],
   animationMap: {
     '1': 'Conga',

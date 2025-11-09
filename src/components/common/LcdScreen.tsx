@@ -3,11 +3,13 @@ import SpinnerIcon from '@/components/icons/SpinnerIcon';
 import * as Animations from './animations';
 import WelcomeScreen from '@/components/common/WelcomeScreen';
 import BootAnimation from '@/components/common/BootAnimation';
+import DeadPixelsOverlay from './DeadPixelsOverlay';
 import { WELCOME_MESSAGE } from '@/constants';
 
 type AppState = 'OFF' | 'BOOTING' | 'IDLE' | 'MENU' | 'EDITING_PAD' | 'GENERATING' | 'ERROR' | 'STICKER_PROMPT';
 
 interface LcdScreenProps {
+  isFlickering: boolean;
   appState: AppState;
   message: string;
   promptValue: string;
@@ -30,6 +32,9 @@ interface LcdScreenProps {
   onMorphChange: (value: number) => void;
   editingSound: 'A' | 'B';
   onToggleEditingSound: () => void;
+  isWellLovedEnabled: boolean;
+  onToggleWellLovedMode: () => void;
+  batteryLevel: number;
 }
 
 const LcdScreen: React.FC<LcdScreenProps> = (props) => {
@@ -40,9 +45,13 @@ const LcdScreen: React.FC<LcdScreenProps> = (props) => {
     stickerRotation, stickerScale, onStickerTransformChange,
     soundModel, onSoundModelChange,
     morphValue, onMorphChange,
-    editingSound, onToggleEditingSound
+    editingSound, onToggleEditingSound,
+    isWellLovedEnabled, onToggleWellLovedMode,
+    batteryLevel
   } = props;
   const AnimationComponent = activeAnimation ? (Animations[activeAnimation as keyof typeof Animations] || null) : null;
+
+  const flickerClass = props.isFlickering ? 'animate-flicker' : '';
 
   const renderContent = () => {
     if (appState === 'OFF') {
@@ -90,6 +99,9 @@ const LcdScreen: React.FC<LcdScreenProps> = (props) => {
                 </div>
                 <button onClick={() => onSoundModelChange(soundModel === 'DEFAULT' ? 'EXPERIMENTAL' : 'DEFAULT')} className="text-center hover:bg-green-900/10 rounded px-1 w-full mt-2">
                     SOUND MODEL: {soundModel}
+                </button>
+                <button onClick={onToggleWellLovedMode} className="text-center hover:bg-green-900/10 rounded px-1 w-full mt-2">
+                    VINTAGE MODE: {isWellLovedEnabled ? 'ON' : 'OFF'}
                 </button>
             </div>
         )
@@ -141,7 +153,11 @@ const LcdScreen: React.FC<LcdScreenProps> = (props) => {
   const bgClasses = appState === 'OFF' ? 'bg-gray-900/80' : 'bg-gray-800';
 
   return (
-    <div className={`h-40 w-full rounded-md p-2 flex flex-col items-center justify-center font-mono text-xl relative overflow-hidden transition-colors duration-500 ${bgClasses}`}>
+    <div className={`h-40 w-full rounded-md p-2 flex flex-col items-center justify-center font-mono text-xl relative overflow-hidden transition-colors duration-500 ${bgClasses} ${flickerClass}`}>
+      <div className="absolute top-2 right-2 text-xs">
+        BATT: {Math.round(batteryLevel)}%
+      </div>
+      {isWellLovedEnabled && <DeadPixelsOverlay />}
       <div className="absolute inset-0 lcd-screen-bg opacity-80"></div>
       <div className="relative z-10 text-center text-green-900 p-2 w-full h-full flex flex-col items-center justify-center">
         {renderContent()}

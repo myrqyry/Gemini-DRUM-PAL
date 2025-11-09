@@ -113,6 +113,13 @@
       animation: text-fade-in 1s ease-out 0.8s forwards; /* Delay start */
     }
 
+    @keyframes flicker {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.8; }
+    }
+    .animate-flicker {
+      animation: flicker 0.2s infinite;
+    }
   </style>
 <link rel="stylesheet" href="/index.css">
 </head>
