@@ -94,10 +94,8 @@ export const useToy = (config: ToyConfig, soundEngine: SoundEngine, initialPads:
     }
     };
 
-    const STICKY_BUTTON_CHANCE = 0.2;
-    const STICKY_BUTTON_MAX_DELAY_MS = 200;
-    if (isWellLovedEnabled && Math.random() < STICKY_BUTTON_CHANCE) {
-      setTimeout(trigger, Math.random() * STICKY_BUTTON_MAX_DELAY_MS);
+    if (isWellLovedEnabled && Math.random() < 0.2) {
+      setTimeout(trigger, Math.random() * 200);
     } else {
       trigger();
     }
@@ -148,7 +146,7 @@ export const useToy = (config: ToyConfig, soundEngine: SoundEngine, initialPads:
     if (isMetronomeOn && powerStatus !== 'OFF') {
       const interval = setInterval(() => {
         actions.depleteBattery();
-        soundEngine.playSound(METRONOME_TICK_CONFIG, soundTimeoutsRef, undefined, 0, isToyModeEnabled, batteryLevel);
+        soundEngine.playSound(METRONOME_TICK_CONFIG, undefined, undefined, 0, isToyModeEnabled, batteryLevel);
         setIsTicking(true);
         setTimeout(() => setIsTicking(false), 100);
       }, (60 / bpm) * 1000);
