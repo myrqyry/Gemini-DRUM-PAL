@@ -7,6 +7,7 @@ export const INITIAL_PADS: PadConfig[] = [
     color: 'bg-red-500',
     soundPrompt: 'A deep, punchy kick drum sound. 808 style.',
     isLoading: false,
+    morphValue: 0,
   },
   {
     id: 'snare',
@@ -14,6 +15,7 @@ export const INITIAL_PADS: PadConfig[] = [
     color: 'bg-sky-400',
     soundPrompt: 'A crisp, snappy snare drum with a short burst of white noise.',
     isLoading: false,
+    morphValue: 0,
   },
   {
     id: 'hihat_closed',
@@ -21,6 +23,7 @@ export const INITIAL_PADS: PadConfig[] = [
     color: 'bg-yellow-300',
     soundPrompt: 'A short, metallic, closed hi-hat sound. Very crisp and tight.',
     isLoading: false,
+    morphValue: 0,
   },
   {
     id: 'hihat_open',
@@ -28,6 +31,7 @@ export const INITIAL_PADS: PadConfig[] = [
     color: 'bg-lime-400',
     soundPrompt: 'A shimmering, metallic open hi-hat sound with a medium decay.',
     isLoading: false,
+    morphValue: 0,
   },
   {
     id: 'tom1',
@@ -35,6 +39,7 @@ export const INITIAL_PADS: PadConfig[] = [
     color: 'bg-orange-400',
     soundPrompt: 'A high-pitched tom drum sound with a quick attack.',
     isLoading: false,
+    morphValue: 0,
   },
   {
     id: 'clap',
@@ -42,6 +47,7 @@ export const INITIAL_PADS: PadConfig[] = [
     color: 'bg-fuchsia-500',
     soundPrompt: 'A classic 80s electronic clap sound, layered and punchy.',
     isLoading: false,
+    morphValue: 0,
   },
   {
     id: 'cymbal_crash',
@@ -49,6 +55,7 @@ export const INITIAL_PADS: PadConfig[] = [
     color: 'bg-teal-300',
     soundPrompt: 'A bright crash cymbal sound with a long decay, like a 909.',
     isLoading: false,
+    morphValue: 0,
   },
   {
     id: 'fx1',
@@ -56,6 +63,7 @@ export const INITIAL_PADS: PadConfig[] = [
     color: 'bg-indigo-500',
     soundPrompt: 'A glitchy, digital artifact sound, like a broken video game.',
     isLoading: false,
+    morphValue: 0,
   },
 ];
 
@@ -68,6 +76,12 @@ export const SHELL_COLORS = [
     { name: 'SLATE', solidClass: 'bg-slate-800', transparentRgba: 'rgba(30, 41, 59, 0.5)', textColor: 'text-slate-300', borderColor: 'border-slate-300', bgColor: 'bg-slate-300/20', isLight: false },
     { name: 'STONE', solidClass: 'bg-stone-100', transparentRgba: 'rgba(245, 245, 244, 0.4)', textColor: 'text-stone-400', borderColor: 'border-stone-400', bgColor: 'bg-stone-400/20', isLight: true },
 ];
+
+export const PRESET_STICKERS = {
+  TECH: 'https://storage.googleapis.com/gemini-drum-pal/stickers/tech_sticker_set_1.png',
+  BIO: 'https://storage.googleapis.com/gemini-drum-pal/stickers/bio_sticker_set_1.png',
+  KAWAII: 'https://storage.googleapis.com/gemini-drum-pal/stickers/kawaii_sticker_set_1.png',
+};
 
 // Defines a "cuter" 3-column layout for the pads
 export const PAD_LAYOUT_ORDER = [

@@ -1,6 +1,6 @@
 import React from 'react';
 import SpinnerIcon from '@/components/icons/SpinnerIcon';
-import * as Animations from '@/components/common/animations';
+import * as Animations from './animations';
 import WelcomeScreen from '@/components/common/WelcomeScreen';
 import BootAnimation from '@/components/common/BootAnimation';
 import { WELCOME_MESSAGE } from '@/constants';
@@ -14,7 +14,7 @@ interface LcdScreenProps {
   onPromptChange: (value: string) => void;
   activeAnimation: string | null;
   selectedPadName: string;
-  onCycleColor: () => void;
+  onCycleTheme: () => void;
   onToggleStyle: () => void;
   currentColorName: string;
   isTransparent: boolean;
@@ -26,17 +26,23 @@ interface LcdScreenProps {
   onStickerTransformChange: (rotation: number, scale: number) => void;
   soundModel: string;
   onSoundModelChange: (model: string) => void;
+  morphValue: number;
+  onMorphChange: (value: number) => void;
+  editingSound: 'A' | 'B';
+  onToggleEditingSound: () => void;
 }
 
 const LcdScreen: React.FC<LcdScreenProps> = (props) => {
   const { 
     appState, message, promptValue, onPromptChange, activeAnimation, 
-    selectedPadName, onCycleColor, onToggleStyle, currentColorName, isTransparent,
+    selectedPadName, onCycleTheme, onToggleStyle, currentColorName, isTransparent,
     stickerUrlInput, onStickerUrlChange, onStickerUrlSubmit,
     stickerRotation, stickerScale, onStickerTransformChange,
-    soundModel, onSoundModelChange
+    soundModel, onSoundModelChange,
+    morphValue, onMorphChange,
+    editingSound, onToggleEditingSound
   } = props;
-  const AnimationComponent = activeAnimation ? Animations[activeAnimation as keyof typeof Animations] : null;
+  const AnimationComponent = activeAnimation ? (Animations[activeAnimation as keyof typeof Animations] || null) : null;
 
   const renderContent = () => {
     if (appState === 'OFF') {
@@ -75,8 +81,8 @@ const LcdScreen: React.FC<LcdScreenProps> = (props) => {
                 <p>Click a pad to edit sound</p>
                 <div className="w-full h-[1px] bg-green-900/20 my-1"></div>
                 <div className="grid grid-cols-2 gap-x-4 w-full px-2 text-base">
-                    <button onClick={onCycleColor} className="text-left hover:bg-green-900/10 rounded px-1">
-                        COLOR: {currentColorName}
+                    <button onClick={onCycleTheme} className="text-left hover:bg-green-900/10 rounded px-1">
+                        THEME: {currentColorName}
                     </button>
                     <button onClick={onToggleStyle} className="text-right hover:bg-green-900/10 rounded px-1">
                         STYLE: {isTransparent ? 'CLEAR' : 'SOLID'}
@@ -101,6 +107,22 @@ const LcdScreen: React.FC<LcdScreenProps> = (props) => {
               autoFocus
             />
             <div className="text-sm -mt-1">Click pad again to generate</div>
+            <div className="w-full flex items-center space-x-2">
+              <span>A</span>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={morphValue}
+                onChange={(e) => onMorphChange(Number(e.target.value))}
+                className="w-full"
+              />
+              <span>B</span>
+            </div>
+            <button onClick={onToggleEditingSound} className="text-sm hover:bg-green-900/10 rounded px-1">
+              EDITING SOUND: {editingSound}
+            </button>
         </div>
       );
     }

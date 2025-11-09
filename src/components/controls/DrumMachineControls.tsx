@@ -13,6 +13,8 @@ interface DrumMachineControlsProps {
   handlePlay: () => void;
   handleStop: () => void;
   recordedSequence: any[];
+  undo: () => void;
+  redo: () => void;
 }
 
 const DrumMachineControls: React.FC<DrumMachineControlsProps> = React.memo(({
@@ -25,7 +27,9 @@ const DrumMachineControls: React.FC<DrumMachineControlsProps> = React.memo(({
   recordingState,
   handlePlay,
   recordedSequence,
-  handleStop
+  handleStop,
+  undo,
+  redo,
 }) => {
   const isPoweredOn = power !== 'OFF';
   const buttonClasses = "w-1/3";
@@ -33,6 +37,8 @@ const DrumMachineControls: React.FC<DrumMachineControlsProps> = React.memo(({
     <div className="flex flex-col space-y-2 w-1/3">
       <div className="flex space-x-1">
         <button onClick={handleMenuButtonClick} disabled={!isPoweredOn || mode === 'GENERATING'} className={buttonClasses}>MENU</button>
+        <button onClick={undo} disabled={!isPoweredOn || mode === 'GENERATING'} className={buttonClasses}>UNDO</button>
+        <button onClick={redo} disabled={!isPoweredOn || mode === 'GENERATING'} className={buttonClasses}>REDO</button>
         <button onClick={handleShareKit} disabled={!isPoweredOn || mode === 'GENERATING'} className={buttonClasses}>SHARE</button>
         <button onClick={() => setIsKitsModalOpen(true)} disabled={!isPoweredOn || mode === 'GENERATING'} className={buttonClasses}>KITS</button>
       </div>

@@ -4,9 +4,9 @@ import { PadConfig } from '../types';
 interface KitsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  savedKits: { name: string; pads: PadConfig[] }[];
+  savedKits: Record<string, PadConfig[]>;
   onSave: (name: string) => void;
-  onLoad: (pads: PadConfig[]) => void;
+  onLoad: (name: string) => void;
   onDelete: (name: string) => void;
 }
 
@@ -37,12 +37,12 @@ const KitsModal: React.FC<KitsModalProps> = ({ isOpen, onClose, savedKits, onSav
           <button onClick={handleSave} className="bg-blue-500 text-white p-2 rounded-r-md">Save Current Kit</button>
         </div>
         <div className="space-y-2">
-          {savedKits.map(kit => (
-            <div key={kit.name} className="flex justify-between items-center p-2 border rounded-md">
-              <span>{kit.name}</span>
+          {Object.keys(savedKits).map(name => (
+            <div key={name} className="flex justify-between items-center p-2 border rounded-md">
+              <span>{name}</span>
               <div>
-                <button onClick={() => onLoad(kit.pads)} className="bg-green-500 text-white p-1 rounded-md mr-2">Load</button>
-                <button onClick={() => onDelete(kit.name)} className="bg-red-500 text-white p-1 rounded-md">Delete</button>
+                <button onClick={() => onLoad(name)} className="bg-green-500 text-white p-1 rounded-md mr-2">Load</button>
+                <button onClick={() => onDelete(name)} className="bg-red-500 text-white p-1 rounded-md">Delete</button>
               </div>
             </div>
           ))}

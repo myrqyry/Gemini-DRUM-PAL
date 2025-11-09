@@ -17,18 +17,20 @@ interface ToyState {
     isMetronomeOn: boolean;
   };
   customization: {
-    shellColorIndex: number;
-    isTransparent: boolean;
-    stickerUrl: string | null;
     stickerRotation: number;
     stickerScale: number;
     soundModel: 'DEFAULT' | 'EXPERIMENTAL';
   };
+  history: PadConfig[][];
+  historyIndex: number;
 }
 
 type ToyAction =
   | { type: 'POWER_ON' }
   | { type: 'POWER_OFF' }
+  | { type: 'UNDO' }
+  | { type: 'REDO' }
+  | { type: 'UPDATE_HISTORY'; history: PadConfig[][]; historyIndex: number }
   | { type: 'SET_MODE'; mode: ToyState['mode'] }
   | { type: 'UPDATE_LCD'; message: string }
   | { type: 'SELECT_PAD'; padId: string | null }
@@ -54,13 +56,12 @@ const initialToyState: ToyState = {
     isMetronomeOn: false,
   },
   customization: {
-    shellColorIndex: 0,
-    isTransparent: false,
-    stickerUrl: null,
     stickerRotation: 0,
     stickerScale: 1,
     soundModel: 'DEFAULT',
   },
+  history: [],
+  historyIndex: 0,
 };
 
 function toyStateReducer(state: ToyState, action: ToyAction): ToyState {
@@ -69,6 +70,25 @@ function toyStateReducer(state: ToyState, action: ToyAction): ToyState {
       return { ...state, power: 'BOOTING' };
     case 'POWER_OFF':
       return initialToyState;
+    case 'UNDO':
+      return {
+        ...state,
+        historyIndex: Math.max(0, state.historyIndex - 1),
+      };
+    case 'REDO':
+      return {
+        ...state,
+        historyIndex: Math.min(
+          state.history.length - 1,
+          state.historyIndex + 1
+        ),
+      };
+    case 'UPDATE_HISTORY':
+      return {
+        ...state,
+        history: action.history,
+        historyIndex: action.historyIndex,
+      };
     case 'SET_MODE':
       return { ...state, mode: action.mode };
     case 'UPDATE_LCD':
@@ -100,6 +120,10 @@ export function useToyState() {
   const actions = {
     powerOn: () => dispatch({ type: 'POWER_ON' }),
     powerOff: () => dispatch({ type: 'POWER_OFF' }),
+    undo: () => dispatch({ type: 'UNDO' }),
+    redo: () => dispatch({ type: 'REDO' }),
+    updateHistory: (history: PadConfig[][], historyIndex: number) =>
+      dispatch({ type: 'UPDATE_HISTORY', history, historyIndex }),
     setMode: (mode: ToyState['mode']) => dispatch({ type: 'SET_MODE', mode }),
     updateLcd: (message: string) => dispatch({ type: 'UPDATE_LCD', message }),
     selectPad: (padId: string | null) => dispatch({ type: 'SELECT_PAD', padId }),

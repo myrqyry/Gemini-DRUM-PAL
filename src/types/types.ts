@@ -38,6 +38,8 @@ export interface PadConfig {
   color: string;
   soundPrompt: string;
   toneJsConfig?: ToneJsSoundConfig;
+  toneJsConfigB?: ToneJsSoundConfig;
+  morphValue: number;
   isLoading: boolean;
   error?: string;
 }
