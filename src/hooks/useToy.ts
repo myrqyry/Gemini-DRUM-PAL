@@ -125,7 +125,7 @@ export const useToy = (config: ToyConfig, soundEngine: SoundEngine, initialPads:
   useEffect(() => {
     if (isMetronomeOn && power !== 'OFF') {
       const interval = setInterval(() => {
-        soundEngine.playSound(METRONOME_TICK_CONFIG, undefined, undefined, 0, isToyModeEnabled);
+        soundEngine.playSound(METRONOME_TICK_CONFIG, soundTimeoutsRef, undefined, 0, isToyModeEnabled);
         setIsTicking(true);
         setTimeout(() => setIsTicking(false), 100);
       }, (60 / bpm) * 1000);
