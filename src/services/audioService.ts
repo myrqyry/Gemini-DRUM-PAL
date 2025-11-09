@@ -121,11 +121,36 @@ const createEffect = (effectConfig: ToneJsEffectConfig): Tone.ToneAudioNode | nu
   }
 };
 
+const createToySpeakerChain = () => {
+  const bitCrusher = new Tone.BitCrusher(8);
+  const filter = new Tone.Filter({
+    type: 'bandpass',
+    frequency: 4100,
+    Q: 0.7,
+  });
+  const distortion = new Tone.Distortion(0.1);
+  const hiss = new Tone.Noise('pink').start();
+  const hissGain = new Tone.Gain(0.1);
+
+  hiss.connect(hissGain);
+  hissGain.connect(distortion);
+
+  bitCrusher.connect(filter);
+  filter.connect(distortion);
+
+  return {
+    input: bitCrusher,
+    output: distortion,
+    effects: [bitCrusher, filter, distortion, hiss, hissGain],
+  };
+};
+
 export const playSound = async (
   soundConfigA: ToneJsSoundConfig | undefined,
   timeoutsRef: React.MutableRefObject<Set<NodeJS.Timeout>>,
   soundConfigB?: ToneJsSoundConfig | undefined,
   morphValue: number = 0,
+  isToyModeEnabled: boolean = false
 ): Promise<void> => {
   if (!soundConfigA) {
     console.warn('No sound configuration provided to playSound.');
@@ -157,11 +182,23 @@ export const playSound = async (
     });
   }
 
+  const toySpeakerChain = isToyModeEnabled ? createToySpeakerChain() : null;
+
   // Connect instrument to effects, then to destination
   if (effectsChain.length > 0) {
-    instrument.chain(...effectsChain, Tone.Destination);
+    if (toySpeakerChain) {
+      instrument.chain(...effectsChain, toySpeakerChain.input);
+      toySpeakerChain.output.toDestination();
+    } else {
+      instrument.chain(...effectsChain, Tone.Destination);
+    }
   } else {
-    instrument.toDestination();
+    if (toySpeakerChain) {
+      instrument.connect(toySpeakerChain.input);
+      toySpeakerChain.output.toDestination();
+    } else {
+      instrument.toDestination();
+    }
   }
   
   const duration = soundConfig.duration || 0.2; // Default duration if not specified
@@ -205,6 +242,7 @@ export const playSound = async (
   const timeoutId = setTimeout(() => {
     instrument.dispose();
     effectsChain.forEach(effect => effect.dispose());
+    toySpeakerChain?.effects.forEach(effect => effect.dispose());
     timeoutsRef?.current.delete(timeoutId);
   }, disposeDelay);
 

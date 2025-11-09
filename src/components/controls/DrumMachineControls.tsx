@@ -15,6 +15,7 @@ interface DrumMachineControlsProps {
   recordedSequence: any[];
   undo: () => void;
   redo: () => void;
+  toggleToyMode: () => void;
 }
 
 const DrumMachineControls: React.FC<DrumMachineControlsProps> = React.memo(({
@@ -30,6 +31,7 @@ const DrumMachineControls: React.FC<DrumMachineControlsProps> = React.memo(({
   handleStop,
   undo,
   redo,
+  toggleToyMode
 }) => {
   const isPoweredOn = power !== 'OFF';
   const buttonClasses = "flex-1";
@@ -43,6 +45,7 @@ const DrumMachineControls: React.FC<DrumMachineControlsProps> = React.memo(({
         <button onClick={() => setIsKitsModalOpen(true)} disabled={!isPoweredOn || mode === 'GENERATING'} className={buttonClasses}>KITS</button>
       </div>
       <div className="flex space-x-1">
+        <button onClick={toggleToyMode} disabled={!isPoweredOn} className={buttonClasses}>TOY</button>
         <button onClick={handleRecord} disabled={!isPoweredOn || recordingState === 'PLAYING'} className={`w-1/3 text-white rounded-md ${recordingState === 'RECORDING' ? 'bg-red-700 animate-pulse' : 'bg-red-500'}`}>●</button>
         <button onClick={handlePlay} disabled={!isPoweredOn || recordedSequence.length === 0 || recordingState === 'PLAYING' || recordingState === 'RECORDING'} className={`w-1/3 text-white rounded-md ${recordingState === 'PLAYING' ? 'bg-green-700' : 'bg-green-500'}`}>▶</button>
         <button onClick={handleStop} disabled={!isPoweredOn || recordingState !== 'PLAYING'} className="w-1/3 bg-gray-500 text-white rounded-md">■</button>

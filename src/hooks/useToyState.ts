@@ -15,6 +15,7 @@ interface ToyState {
   audio: {
     bpm: number;
     isMetronomeOn: boolean;
+    isToyModeEnabled: boolean;
   };
   customization: {
     stickerRotation: number;
@@ -37,6 +38,7 @@ type ToyAction =
   | { type: 'TRIGGER_ANIMATION'; animation: string | null }
   | { type: 'UPDATE_UI'; ui: Partial<ToyState['ui']> }
   | { type: 'UPDATE_AUDIO'; audio: Partial<ToyState['audio']> }
+  | { type: 'TOGGLE_TOY_MODE' }
   | { type: 'UPDATE_CUSTOMIZATION'; customization: Partial<ToyState['customization']> }
   | { type: 'SET_ERROR'; message: string };
 
@@ -54,6 +56,7 @@ const initialToyState: ToyState = {
   audio: {
     bpm: 120,
     isMetronomeOn: false,
+    isToyModeEnabled: false,
   },
   customization: {
     stickerRotation: 0,
@@ -105,6 +108,8 @@ function toyStateReducer(state: ToyState, action: ToyAction): ToyState {
         return { ...state, ui: { ...state.ui, ...action.ui } };
     case 'UPDATE_AUDIO':
         return { ...state, audio: { ...state.audio, ...action.audio } };
+    case 'TOGGLE_TOY_MODE':
+        return { ...state, audio: { ...state.audio, isToyModeEnabled: !state.audio.isToyModeEnabled } };
     case 'UPDATE_CUSTOMIZATION':
         return { ...state, customization: { ...state.customization, ...action.customization } };
     case 'SET_ERROR':
@@ -130,6 +135,7 @@ export function useToyState() {
     triggerAnimation: (animation: string | null) => dispatch({ type: 'TRIGGER_ANIMATION', animation }),
     updateUi: (ui: Partial<ToyState['ui']>) => dispatch({ type: 'UPDATE_UI', ui }),
     updateAudio: (audio: Partial<ToyState['audio']>) => dispatch({ type: 'UPDATE_AUDIO', audio }),
+    toggleToyMode: () => dispatch({ type: 'TOGGLE_TOY_MODE' }),
     updateCustomization: (customization: Partial<ToyState['customization']>) => dispatch({ type: 'UPDATE_CUSTOMIZATION', customization }),
     setError: (message: string) => dispatch({ type: 'SET_ERROR', message }),
   };
