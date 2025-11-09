@@ -1,20 +1,41 @@
-import { useState, useMemo } from 'react';
-import { SHELL_COLORS } from '../constants';
+import { useState, useMemo, useCallback } from 'react';
+import { THEMES } from '../themes';
+import { PRESET_STICKERS } from '../constants';
 
 export const useShellCustomization = () => {
-  const [shellColorIndex, setShellColorIndex] = useState(0);
-  const [isTransparent, setIsTransparent] = useState(false);
+  const [themeIndex, setThemeIndex] = useState(0);
 
-  const currentShell = useMemo(() => SHELL_COLORS[shellColorIndex], [shellColorIndex]);
+  const currentTheme = useMemo(() => THEMES[themeIndex], [themeIndex]);
 
-  const handleCycleColor = () => setShellColorIndex((prev) => (prev + 1) % SHELL_COLORS.length);
-  const handleToggleStyle = () => setIsTransparent(prev => !prev);
+  const handleCycleTheme = useCallback(() => {
+    setThemeIndex(prev => (prev + 1) % THEMES.length);
+  }, []);
+
+  const handleSetTheme = useCallback((themeName: string) => {
+    const index = THEMES.findIndex(theme => theme.name === themeName);
+    if (index !== -1) {
+      setThemeIndex(index);
+    }
+  }, []);
+
+  const shellColor = useMemo(() => {
+    return currentTheme.shellColor
+  }, [currentTheme]);
+
+  const isTransparent = useMemo(() => {
+    return currentTheme.isTransparent
+  }, [currentTheme]);
+
+  const stickerUrl = useMemo(() => {
+    return currentTheme.stickerSet ? PRESET_STICKERS[currentTheme.stickerSet] : null;
+  }, [currentTheme]);
+
 
   return {
-    shellColorIndex,
+    shellColor,
     isTransparent,
-    currentShell,
-    handleCycleColor,
-    handleToggleStyle
+    stickerUrl,
+    handleCycleTheme,
+    handleSetTheme,
   };
 };

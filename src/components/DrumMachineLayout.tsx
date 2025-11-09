@@ -28,8 +28,7 @@ export const DrumMachineLayout: React.FC<DrumMachineLayoutProps> = ({ toy }) => 
     handlePowerOn,
     handlePadClick,
     handleMenuButtonClick,
-    handleCycleColor,
-    handleToggleStyle,
+    handleCycleTheme,
     handleStickerTrigger,
     handleStickerUrlSubmit,
     handleShareKit,
@@ -158,8 +157,7 @@ export const DrumMachineLayout: React.FC<DrumMachineLayoutProps> = ({ toy }) => 
           selectedPadName={
             pads.find((p) => p.id === selectedPadId)?.name || ''
           }
-          onCycleColor={handleCycleColor}
-          onToggleStyle={handleToggleStyle}
+          onCycleTheme={handleCycleTheme}
           currentColorName={currentShell.name}
           isTransparent={isTransparent}
           stickerUrlInput={stickerUrlInput}
@@ -170,6 +168,10 @@ export const DrumMachineLayout: React.FC<DrumMachineLayoutProps> = ({ toy }) => 
           onStickerTransformChange={handleStickerTransformChange}
           soundModel={soundModel}
           onSoundModelChange={(model) => actions.updateCustomization({ soundModel: model })}
+          morphValue={toy.morphValue}
+          onMorphChange={toy.handleMorphChange}
+          editingSound={toy.editingSound}
+          onToggleEditingSound={toy.handleToggleEditingSound}
         />
       </div>
 
@@ -216,6 +218,8 @@ export const DrumMachineLayout: React.FC<DrumMachineLayoutProps> = ({ toy }) => 
           handlePlay={handlePlay}
           handleStop={handleStop}
           recordedSequence={recordedSequence}
+          undo={toy.undo}
+          redo={toy.redo}
         />
         <MetronomeControls
           isPoweredOn={power !== 'OFF'}

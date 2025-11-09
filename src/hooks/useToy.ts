@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useShellCustomization } from './useShellCustomization';
 import { useToyState } from './useToyState';
 import { useKitManager } from './useKitManager';
 import { useAudioManager } from './useAudioManager';
@@ -7,7 +8,9 @@ import { getSoundConfigFromPrompt } from '@/services/geminiService';
 import { getAudioContextState } from '@/services/audioService';
 import { SecurityUtils } from '@/utils/security';
 import { getPadIdFromKey } from '@/utils/keyboardMapping';
+import { parseKitFromUrl } from '@/utils/url';
 import { KitService } from '@/services/kitService';
+import { THEMES } from '@/themes';
 import { AppError, createErrorHandler } from '@/utils/errorHandling';
 import { WELCOME_MESSAGE, METRONOME_TICK_CONFIG, GEMINI_MODEL_NAME, GEMINI_MODEL_NAME_EXPERIMENTAL } from '@/constants';
 import { ToyConfig, SoundEngine } from '@/types/toyTypes';
@@ -18,7 +21,9 @@ export const useToy = (config: ToyConfig, soundEngine: SoundEngine, initialPads:
   const { power, mode, ui, audio, customization } = state;
   const { lcdMessage, selectedPadId, activeAnimation, isKitsModalOpen, promptInputValue, stickerUrlInput } = ui;
   const { bpm, isMetronomeOn } = audio;
-  const { shellColorIndex, isTransparent, stickerUrl, stickerRotation, stickerScale, soundModel } = customization;
+  const { stickerRotation, stickerScale, soundModel } = customization;
+  const { shellColor, isTransparent: themeIsTransparent, stickerUrl: themeStickerUrl, handleCycleTheme, handleSetTheme } = useShellCustomization();
+
 
   const { pads, setPads, savedKits, handleSaveKit, handleLoadKit, handleDeleteKit } = useKitManager(initialPads);
   const { initializeAudio } = useAudioManager();
@@ -27,8 +32,29 @@ export const useToy = (config: ToyConfig, soundEngine: SoundEngine, initialPads:
   const [stickerClickCount, setStickerClickCount] = useState(0);
   const [isTicking, setIsTicking] = useState(false);
   const [isApiKeyMissing, setIsApiKeyMissing] = useState(false);
+  const [morphValue, setMorphValue] = useState(0);
+  const [editingSound, setEditingSound] = useState<'A' | 'B'>('A');
 
-  const currentShell = useMemo(() => config.shellColors[shellColorIndex], [shellColorIndex, config.shellColors]);
+  const handleToggleEditingSound = () => {
+    setEditingSound(prev => (prev === 'A' ? 'B' : 'A'));
+  };
+
+  const handleMorphChange = (value: number) => {
+    setMorphValue(value);
+    if (selectedPadId) {
+      setPads(
+        pads.map(p =>
+          p.id === selectedPadId ? { ...p, morphValue: value } : p
+        )
+      );
+    }
+  };
+
+  const currentShell = useMemo(() => {
+    const theme = THEMES.find(t => t.shellColor === shellColor);
+    const shell = config.shellColors.find(c => c.name === theme?.shellName);
+    return shell || config.shellColors[0];
+  }, [shellColor, config.shellColors]);
 
   const soundTimeoutsRef = React.useRef<Set<NodeJS.Timeout>>(new Set());
 
@@ -47,7 +73,7 @@ export const useToy = (config: ToyConfig, soundEngine: SoundEngine, initialPads:
 
     recordNote(padId);
 
-    soundEngine.playSound(pad.toneJsConfig, soundTimeoutsRef);
+    soundEngine.playSound(pad.toneJsConfig, soundTimeoutsRef, pad.toneJsConfigB, pad.morphValue);
     setPads(prev => prev.map(p => p.id === padId ? { ...p, error: undefined } : p));
     const animationType = config.animationMap[pad.id];
     if (animationType) {
@@ -124,6 +150,24 @@ export const useToy = (config: ToyConfig, soundEngine: SoundEngine, initialPads:
         p.id === padId ? { ...p, isLoading: true, error: undefined } : p
       ));
 
+      const cachedConfig = KitService.loadSoundConfig(prompt);
+
+      if (cachedConfig) {
+        setPads(prev => prev.map(p =>
+          p.id === padId ? {
+            ...p,
+            soundPrompt: prompt,
+            toneJsConfig: cachedConfig,
+            isLoading: false,
+            error: undefined
+          } : p
+        ));
+        if (!isPreconfig) {
+          showTemporaryMessage("LOADED!", 1500, 'IDLE');
+        }
+        return;
+      }
+
       const model = soundModel === 'EXPERIMENTAL' ? GEMINI_MODEL_NAME_EXPERIMENTAL : GEMINI_MODEL_NAME;
       const newConfig = await getSoundConfigFromPrompt(prompt, model);
 
@@ -131,20 +175,35 @@ export const useToy = (config: ToyConfig, soundEngine: SoundEngine, initialPads:
         throw new AppError('Failed to generate sound configuration', 'CONFIG_GENERATION_ERROR');
       }
 
-      setPads(prev => prev.map(p =>
-        p.id === padId ? {
-          ...p,
-          soundPrompt: prompt,
-          toneJsConfig: newConfig,
-          isLoading: false,
-          error: undefined
-        } : p
-      ));
+      KitService.saveSoundConfig(prompt, newConfig);
+
+      const newPads = pads.map(p => {
+        if (p.id === padId) {
+          const newPad = {
+            ...p,
+            soundPrompt: prompt,
+            isLoading: false,
+            error: undefined,
+          };
+          if (editingSound === 'A') {
+            newPad.toneJsConfig = newConfig;
+          } else {
+            newPad.toneJsConfigB = newConfig;
+          }
+          return newPad;
+        }
+        return p;
+      });
+      setPads(newPads);
 
       if (!isPreconfig) {
         showTemporaryMessage("SUCCESS!", 1500, 'IDLE');
       }
 
+      actions.updateHistory(
+        [...state.history.slice(0, state.historyIndex + 1), newPads],
+        state.historyIndex + 1
+      );
     } catch (error) {
       const appError = handleError(error);
       console.error(`[${appError.code}] ${appError.message}`, error);
@@ -236,9 +295,6 @@ export const useToy = (config: ToyConfig, soundEngine: SoundEngine, initialPads:
     }
   };
 
-  const handleCycleColor = () => actions.updateCustomization({ shellColorIndex: (shellColorIndex + 1) % config.shellColors.length });
-  const handleToggleStyle = () => actions.updateCustomization({ isTransparent: !isTransparent });
-
   const handleStickerTrigger = () => {
     if (power === 'OFF' || power === 'BOOTING' || mode === 'GENERATING') return;
     const newCount = stickerClickCount + 1;
@@ -265,7 +321,12 @@ export const useToy = (config: ToyConfig, soundEngine: SoundEngine, initialPads:
   }, [stickerUrlInput, showTemporaryMessage, actions]);
 
   const handleShareKit = async () => {
-    const url = KitService.generateShareableUrl(pads);
+    const url = KitService.generateShareableUrl(
+      pads,
+      shellColor,
+      themeIsTransparent,
+      themeStickerUrl
+    );
     const success = await KitService.copyToClipboard(url);
     if (success) {
       showTemporaryMessage("LINK COPIED!", 1500, mode);
@@ -293,6 +354,22 @@ export const useToy = (config: ToyConfig, soundEngine: SoundEngine, initialPads:
     checkApiKey();
   }, []);
 
+  useEffect(() => {
+    parseKitFromUrl((pads, shellColor, isTransparent, stickerUrl) => {
+      setPads(pads);
+      const themeName = THEMES.find(theme => theme.shellColor === shellColor)?.name;
+      if (themeName) {
+        handleSetTheme(themeName);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    if (state.history.length > 0) {
+      setPads(state.history[state.historyIndex]);
+    }
+  }, [state.historyIndex]);
+
   return {
     state,
     actions,
@@ -303,8 +380,7 @@ export const useToy = (config: ToyConfig, soundEngine: SoundEngine, initialPads:
     handlePowerOn,
     handlePadClick,
     handleMenuButtonClick,
-    handleCycleColor,
-    handleToggleStyle,
+    handleCycleTheme,
     handleStickerTrigger,
     handleStickerUrlSubmit,
     handleShareKit,
@@ -317,6 +393,12 @@ export const useToy = (config: ToyConfig, soundEngine: SoundEngine, initialPads:
     savedKits,
     handleSaveKit,
     handleLoadKit,
-    handleDeleteKit
+    handleDeleteKit,
+    undo: actions.undo,
+    redo: actions.redo,
+    morphValue,
+    handleMorphChange,
+    editingSound,
+    handleToggleEditingSound,
   };
 };

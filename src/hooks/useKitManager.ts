@@ -1,31 +1,30 @@
 import { useState, useEffect } from 'react';
 import { PadConfig } from '../types';
+import { KitService } from '../services/kitService';
 
 export const useKitManager = (initialPads: PadConfig[]) => {
   const [pads, setPads] = useState<PadConfig[]>(initialPads);
-  const [savedKits, setSavedKits] = useState<{ name: string; pads: PadConfig[] }[]>([]);
+  const [savedKits, setSavedKits] = useState<Record<string, PadConfig[]>>({});
 
   useEffect(() => {
-    const storedKits = localStorage.getItem('savedKits');
-    if (storedKits) {
-      setSavedKits(JSON.parse(storedKits));
-    }
+    setSavedKits(KitService.loadKits());
   }, []);
 
   const handleSaveKit = (name: string) => {
-    const newKits = [...savedKits, { name, pads }];
-    setSavedKits(newKits);
-    localStorage.setItem('savedKits', JSON.stringify(newKits));
+    KitService.saveKit(name, pads);
+    setSavedKits(KitService.loadKits());
   };
 
-  const handleLoadKit = (loadedPads: PadConfig[]) => {
-    setPads(loadedPads.map(p => ({ ...p, toneJsConfig: undefined, isLoading: false, error: undefined })));
+  const handleLoadKit = (kitName: string) => {
+    const kit = savedKits[kitName];
+    if (kit) {
+      setPads(kit.map(p => ({ ...p, toneJsConfig: undefined, isLoading: false, error: undefined })));
+    }
   };
 
   const handleDeleteKit = (name: string) => {
-    const newKits = savedKits.filter(kit => kit.name !== name);
-    setSavedKits(newKits);
-    localStorage.setItem('savedKits', JSON.stringify(newKits));
+    KitService.deleteKit(name);
+    setSavedKits(KitService.loadKits());
   };
 
   return { pads, setPads, savedKits, handleSaveKit, handleLoadKit, handleDeleteKit };

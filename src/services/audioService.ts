@@ -122,13 +122,20 @@ const createEffect = (effectConfig: ToneJsEffectConfig): Tone.ToneAudioNode | nu
 };
 
 export const playSound = async (
-  soundConfig: ToneJsSoundConfig | undefined,
-  timeoutsRef?: React.MutableRefObject<Set<NodeJS.Timeout>>
+  soundConfigA: ToneJsSoundConfig | undefined,
+  timeoutsRef: React.MutableRefObject<Set<NodeJS.Timeout>>,
+  soundConfigB?: ToneJsSoundConfig | undefined,
+  morphValue: number = 0,
 ): Promise<void> => {
-  if (!soundConfig) {
+  if (!soundConfigA) {
     console.warn('No sound configuration provided to playSound.');
     return;
   }
+
+  const soundConfig =
+    soundConfigB && morphValue > 0
+      ? interpolate(soundConfigA, soundConfigB, morphValue)
+      : soundConfigA;
 
   if (Tone.context.state !== 'running') {
     console.warn('AudioContext not running. Attempting to initialize.');
@@ -202,6 +209,50 @@ export const playSound = async (
   }, disposeDelay);
 
   timeoutsRef?.current.add(timeoutId);
+};
+
+const interpolate = (
+  configA: ToneJsSoundConfig,
+  configB: ToneJsSoundConfig,
+  morphValue: number
+): ToneJsSoundConfig => {
+  const interpolatedConfig = JSON.parse(JSON.stringify(configA));
+
+  // Interpolate instrument options
+  for (const key in configA.options) {
+    if (
+      typeof configA.options[key] === 'number' &&
+      typeof configB.options[key] === 'number'
+    ) {
+      interpolatedConfig.options[key] =
+        (configA.options[key] as number) * (1 - morphValue) +
+        (configB.options[key] as number) * morphValue;
+    }
+  }
+
+  // Interpolate effects options
+  if (configA.effects && configB.effects) {
+    interpolatedConfig.effects = configA.effects.map((effectA, i) => {
+      const effectB = configB.effects?.[i];
+      if (effectA.type === effectB?.type) {
+        const interpolatedEffect = JSON.parse(JSON.stringify(effectA));
+        for (const key in effectA.options) {
+          if (
+            typeof effectA.options[key] === 'number' &&
+            typeof effectB.options[key] === 'number'
+          ) {
+            interpolatedEffect.options[key] =
+              (effectA.options[key] as number) * (1 - morphValue) +
+              (effectB.options[key] as number) * morphValue;
+          }
+        }
+        return interpolatedEffect;
+      }
+      return effectA;
+    });
+  }
+
+  return interpolatedConfig;
 };
 
 export const soundEngine = {
