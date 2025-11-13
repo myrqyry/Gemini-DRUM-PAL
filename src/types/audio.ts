@@ -19,14 +19,16 @@ export type ToneEffectType =
   | 'AutoFilter'
   | 'FrequencyShifter';
 
+export type ToneJsOptions = Record<string, any>;
+
 export interface ToneJsEffectConfig {
   type: ToneEffectType;
-  options: Record<string, unknown>;
+  options: ToneJsOptions;
 }
 
 export interface ToneJsSoundConfig {
   instrument: ToneInstrumentType;
-  options: Record<string, unknown>;
+  options: ToneJsOptions;
   effects?: ToneJsEffectConfig[];
   duration?: string | number;
   note?: string;

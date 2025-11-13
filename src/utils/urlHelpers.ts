@@ -15,9 +15,16 @@ export const isValidImageUrl = (url: string): boolean => {
   }
 };
 
-export const parseKitFromUrl = (): PadConfig[] => {
+interface ParsedUrlData {
+  pads: PadConfig[];
+  shellColor: string;
+  isTransparent: boolean;
+  stickerUrl: string | null;
+}
+
+export const parseKitFromUrl = (): ParsedUrlData | null => {
   if (typeof window === 'undefined' || !window.location.hash) {
-    return INITIAL_PADS;
+    return null;
   }
 
   try {
@@ -28,25 +35,39 @@ export const parseKitFromUrl = (): PadConfig[] => {
     }
 
     const decoded = atob(hash);
-    const parsed = JSON.parse(decoded) as Array<{ id: string; p: string }>;
+    const parsed = JSON.parse(decoded);
 
-    if (!Array.isArray(parsed)) {
-      throw new Error("Invalid kit data format");
+    if (!parsed || typeof parsed !== 'object' || !parsed.pads || !parsed.shell) {
+        throw new Error("Invalid kit data structure");
     }
 
-    const padsFromHash = parsed.reduce((acc, item) => {
+    const { pads: padPrompts, shell } = parsed;
+
+    if (!Array.isArray(padPrompts) || typeof shell.c !== 'string' || typeof shell.t !== 'boolean') {
+        throw new Error("Invalid kit data types");
+    }
+
+    const padsFromHash = padPrompts.reduce((acc, item) => {
       if (item.id && typeof item.p === 'string') {
         acc[item.id] = item.p;
       }
       return acc;
     }, {} as Record<string, string>);
 
-    return INITIAL_PADS.map(pad => {
+    const pads = INITIAL_PADS.map(pad => {
       const prompt = padsFromHash[pad.id];
       return prompt
          ? { ...pad, soundPrompt: prompt, toneJsConfig: undefined, isLoading: false, error: undefined }
          : pad;
     });
+
+    return {
+        pads,
+        shellColor: shell.c,
+        isTransparent: shell.t,
+        stickerUrl: typeof shell.s === 'string' ? shell.s : null
+    }
+
   } catch (error) {
     console.error("Failed to parse sound kit from URL hash:", error);
 
@@ -54,6 +75,6 @@ export const parseKitFromUrl = (): PadConfig[] => {
       window.history.pushState("", document.title, window.location.pathname + window.location.search);
     }
 
-    return INITIAL_PADS;
+    return null;
   }
 };
