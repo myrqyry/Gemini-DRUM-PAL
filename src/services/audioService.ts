@@ -16,25 +16,21 @@ export const initializeAudio = async (): Promise<boolean> => {
     return true;
   }
 
-  if (initializationPromise) {
-    return initializationPromise;
+  if (!initializationPromise) {
+    initializationPromise = (async () => {
+      try {
+        await Tone.start();
+        console.log('AudioContext started successfully.');
+        audioInitialized = true;
+        return true;
+      } catch (error) {
+        console.error('Failed to start AudioContext:', error);
+        audioInitialized = false;
+        initializationPromise = null; // Reset for future attempts
+        throw error;
+      }
+    })();
   }
-
-  initializationPromise = (async () => {
-    try {
-      await Tone.start();
-      console.log('AudioContext started successfully.');
-      audioInitialized = true;
-      return true;
-    } catch (error) {
-      console.error('Failed to start AudioContext:', error);
-      audioInitialized = false;
-      throw error;
-    } finally {
-      initializationPromise = null;
-    }
-  })();
-
   return initializationPromise;
 };
 
@@ -225,10 +221,8 @@ export const playSound = async (
       instrument.triggerAttackRelease(note || 'C4', duration, Tone.now());
     } else {
       // Generic fallback for other potential instruments not explicitly handled or if note isn't relevant
-      // @ts-ignore Check if triggerAttackRelease is a function before calling it
-      if (typeof (instrument as any).triggerAttackRelease === 'function') {
-         // @ts-ignore
-        (instrument as any).triggerAttackRelease(note, duration, Tone.now());
+      if ('triggerAttackRelease' in instrument && typeof instrument.triggerAttackRelease === 'function') {
+        instrument.triggerAttackRelease(note, duration, Tone.now());
       } else {
         console.warn(`Instrument type ${soundConfig.instrument} might not support triggerAttackRelease in this way, or requires a note.`);
       }

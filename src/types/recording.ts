@@ -12,13 +12,14 @@ export interface RecordingSequence {
 }
 
 export const validateRecordedNote = (note: unknown): note is RecordedNote => {
+  const noteAsRecord = note as Record<string, unknown>;
   return (
     typeof note === 'object' &&
     note !== null &&
     'padId' in note &&
     'timestamp' in note &&
-    typeof (note as any).padId === 'string' &&
-    typeof (note as any).timestamp === 'number' &&
-    (note as any).timestamp >= 0
+    typeof noteAsRecord.padId === 'string' &&
+    typeof noteAsRecord.timestamp === 'number' &&
+    noteAsRecord.timestamp >= 0
   );
 };

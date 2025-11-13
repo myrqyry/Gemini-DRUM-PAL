@@ -8,7 +8,7 @@ import { getSoundConfigFromPrompt } from '@/services/geminiService';
 import { getAudioContextState } from '@/services/audioService';
 import { SecurityUtils } from '@/utils/security';
 import { getPadIdFromKey } from '@/utils/keyboardMapping';
-import { parseKitFromUrl } from '@/utils/url';
+import { parseKitFromUrl } from '@/utils/urlHelpers';
 import { KitService } from '@/services/kitService';
 import { THEMES } from '@/themes';
 import { AppError, createErrorHandler } from '@/utils/errorHandling';
@@ -376,13 +376,15 @@ export const useToy = (config: ToyConfig, soundEngine: SoundEngine, initialPads:
   }, []);
 
   useEffect(() => {
-    parseKitFromUrl((pads, shellColor, isTransparent, stickerUrl) => {
-      setPads(pads);
-      const themeName = THEMES.find(theme => theme.shellColor === shellColor)?.name;
+    const parsedData = parseKitFromUrl();
+    if (parsedData) {
+      setPads(parsedData.pads);
+      const themeName = THEMES.find(theme => theme.shellColor === parsedData.shellColor)?.name;
       if (themeName) {
         handleSetTheme(themeName);
       }
-    });
+      // Cannot set isTransparent and stickerUrl directly, this should be handled by the theme
+    }
   }, []);
 
   useEffect(() => {

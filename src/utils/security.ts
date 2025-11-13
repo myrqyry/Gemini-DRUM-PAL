@@ -21,11 +21,10 @@ export class SecurityUtils {
         throw new Error('Only HTTPS URLs are allowed');
       }
 
-      const isAllowedHost = this.ALLOWED_HOSTS.length === 0 ||
-        this.ALLOWED_HOSTS.some(host => parsed.hostname.endsWith(host));
+      const isAllowedHost = this.ALLOWED_HOSTS.some(host => parsed.hostname.endsWith(host));
 
       if (!isAllowedHost) {
-        console.warn(`Host ${parsed.hostname} not in allowed list`);
+        throw new Error(`Host ${parsed.hostname} not in allowed list`);
       }
 
       if (!/\.(jpg|jpeg|png|gif|webp|svg)$/i.test(parsed.pathname)) {
