@@ -1,5 +1,26 @@
 import { ToyConfig } from '../types/toyTypes';
 
+/**
+ * @const {ToyConfig} toyConfig
+ * @description The main configuration object for the toy.
+ * This object defines the visual and functional aspects of the toy,
+ * including shell colors, animation mappings, and the initial state of the drum pads.
+ *
+ * @property {object[]} shellColors - An array of available shell color configurations.
+ *   @property {string} shellColors.name - The name of the color.
+ *   @property {string} shellColors.solidClass - The CSS class for the solid color.
+ *   @property {string} shellColors.transparentRgba - The RGBA value for the transparent color.
+ *   @property {string} shellColors.textColor - The CSS class for the text color.
+ *   @property {string} shellColors.textInsetClass - The CSS class for the inset text effect.
+ * @property {object} animationMap - A mapping of pad IDs to animation names.
+ * @property {object[]} initialPads - The initial configuration for each drum pad.
+ *   @property {string} initialPads.id - The unique identifier for the pad.
+ *   @property {string} initialPads.name - The display name of the pad.
+ *   @property {string} initialPads.soundPrompt - The prompt used to generate the pad's sound.
+ *   @property {null} initialPads.toneJsConfig - The Tone.js configuration for the sound (initially null).
+ *   @property {boolean} initialPads.isLoading - A flag indicating if the sound is currently being loaded.
+ *   @property {undefined} initialPads.error - A field to store any errors that occur during sound generation.
+ */
 export const toyConfig: ToyConfig = {
   shellColors: [
     { name: 'SLATE', solidClass: 'bg-gray-600', transparentRgba: 'rgba(75, 85, 99, 0.5)', textColor: 'text-white', textInsetClass: 'text-gray-900' },

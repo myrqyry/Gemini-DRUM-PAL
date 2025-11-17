@@ -4,6 +4,16 @@ import { AppError } from '@/utils/errorHandling';
 
 const API_ENDPOINT = '/.netlify/functions/generate-sound';
 
+/**
+ * Fetches a Tone.js sound configuration from the Gemini API based on a user prompt.
+ * This function communicates with a Netlify serverless function that acts as a proxy to the Gemini API.
+ * It handles potential network errors and validates the response from the API.
+ *
+ * @param {string} userPrompt - The user's description of the desired sound.
+ * @param {string} [modelName=GEMINI_MODEL_NAME] - The name of the Gemini model to use for sound generation.
+ * @returns {Promise<ToneJsSoundConfig>} A promise that resolves to a valid Tone.js sound configuration.
+ * @throws {AppError} Throws an `AppError` if the network request fails or the response is invalid.
+ */
 export const getSoundConfigFromPrompt = async (
   userPrompt: string,
   modelName: string = GEMINI_MODEL_NAME

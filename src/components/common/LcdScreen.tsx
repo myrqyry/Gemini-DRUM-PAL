@@ -6,37 +6,77 @@ import BootAnimation from '@/components/common/BootAnimation';
 import DeadPixelsOverlay from './DeadPixelsOverlay';
 import { WELCOME_MESSAGE } from '@/constants';
 
+/**
+ * @typedef {'OFF' | 'BOOTING' | 'IDLE' | 'MENU' | 'EDITING_PAD' | 'GENERATING' | 'ERROR' | 'STICKER_PROMPT'} AppState
+ * @description Represents the various states of the application, controlling what is displayed on the LCD screen.
+ */
 type AppState = 'OFF' | 'BOOTING' | 'IDLE' | 'MENU' | 'EDITING_PAD' | 'GENERATING' | 'ERROR' | 'STICKER_PROMPT';
 
+/**
+ * @interface LcdScreenProps
+ * @description Defines the props for the LcdScreen component.
+ */
 interface LcdScreenProps {
+  /** A flag to enable a flickering animation on the screen. */
   isFlickering: boolean;
+  /** The current state of the application. */
   appState: AppState;
+  /** The message to be displayed on the screen. */
   message: string;
+  /** The current value of the prompt input field. */
   promptValue: string;
+  /** Callback function for when the prompt value changes. */
   onPromptChange: (value: string) => void;
+  /** The name of the currently active animation. */
   activeAnimation: string | null;
+  /** The name of the selected drum pad. */
   selectedPadName: string;
+  /** Callback function to cycle through available themes. */
   onCycleTheme: () => void;
+  /** Callback function to toggle the transparent style. */
   onToggleStyle: () => void;
+  /** The name of the current color theme. */
   currentColorName: string;
+  /** A flag indicating if the transparent style is enabled. */
   isTransparent: boolean;
+  /** The current value of the sticker URL input field. */
   stickerUrlInput: string;
+  /** Callback function for when the sticker URL input value changes. */
   onStickerUrlChange: (value: string) => void;
+  /** Callback function to submit the sticker URL. */
   onStickerUrlSubmit: () => void;
+  /** The rotation value of the sticker. */
   stickerRotation: number;
+  /** The scale value of the sticker. */
   stickerScale: number;
+  /** Callback function for when the sticker's transform changes. */
   onStickerTransformChange: (rotation: number, scale: number) => void;
+  /** The current sound generation model. */
   soundModel: string;
+  /** Callback function to change the sound generation model. */
   onSoundModelChange: (model: string) => void;
+  /** The current morph value between two sounds. */
   morphValue: number;
+  /** Callback function to change the morph value. */
   onMorphChange: (value: number) => void;
+  /** The sound ('A' or 'B') currently being edited. */
   editingSound: 'A' | 'B';
+  /** Callback function to toggle between editing sound 'A' and 'B'. */
   onToggleEditingSound: () => void;
+  /** A flag indicating if the 'well-loved' (vintage) mode is enabled. */
   isWellLovedEnabled: boolean;
+  /** Callback function to toggle the 'well-loved' mode. */
   onToggleWellLovedMode: () => void;
+  /** The current battery level. */
   batteryLevel: number;
 }
 
+/**
+ * A React functional component that simulates an LCD screen, displaying different content based on the application state.
+ *
+ * @param {LcdScreenProps} props - The props for the component.
+ * @returns {React.FC} A component that renders the LCD screen.
+ */
 const LcdScreen: React.FC<LcdScreenProps> = (props) => {
   const { 
     appState, message, promptValue, onPromptChange, activeAnimation, 

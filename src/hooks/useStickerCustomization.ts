@@ -1,6 +1,24 @@
 import { useState, useCallback, useEffect } from 'react';
 import { SecurityUtils } from '../utils/security';
 
+/**
+ * @function useStickerCustomization
+ * @description A custom hook to manage sticker customization.
+ * This hook handles the state and logic for sticker URLs, transformations (rotation and scale), and user interactions for applying stickers.
+ * It also persists sticker transformations to local storage.
+ *
+ * @returns {{
+ *   stickerUrl: string | null,
+ *   stickerClickCount: number,
+ *   stickerUrlInput: string,
+ *   stickerRotation: number,
+ *   stickerScale: number,
+ *   setStickerUrlInput: React.Dispatch<React.SetStateAction<string>>,
+ *   handleStickerTrigger: (appState: string) => 'STICKER_PROMPT' | null,
+ *   handleStickerUrlSubmit: (onSuccess: (msg: string) => void, onError: (msg: string) => void) => void,
+ *   handleStickerTransformChange: (rotation: number, scale: number) => void
+ * }} An object containing the sticker customization state and functions to update it.
+ */
 export const useStickerCustomization = () => {
   const [stickerUrl, setStickerUrl] = useState<string | null>(null);
   const [stickerClickCount, setStickerClickCount] = useState(0);

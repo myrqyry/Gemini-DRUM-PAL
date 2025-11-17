@@ -5,6 +5,14 @@ import { useKitManager } from './useKitManager';
 import { useAppState } from './useAppState';
 import { getPadIdFromKey } from '../utils/keyboardMapping';
 
+/**
+ * @interface PadInteractionProps
+ * @description Defines the props for the usePadInteraction hook.
+ * @property {ReturnType<typeof useAppState>} appState - The application state manager.
+ * @property {ReturnType<typeof useAudioManager>} audioManager - The audio manager.
+ * @property {ReturnType<typeof useKitManager>} kitManager - The kit manager.
+ * @property {(padId: string, prompt: string) => Promise<void>} handleGenerateSound - Function to generate sound for a pad.
+ */
 interface PadInteractionProps {
   appState: ReturnType<typeof useAppState>;
   audioManager: ReturnType<typeof useAudioManager>;
@@ -12,6 +20,15 @@ interface PadInteractionProps {
   handleGenerateSound: (padId: string, prompt: string) => Promise<void>;
 }
 
+/**
+ * @function usePadInteraction
+ * @description A custom hook to manage user interactions with the drum pads.
+ * This hook handles pad clicks, keyboard inputs, and the logic for editing and triggering pads based on the application state.
+ * It also integrates with the recording functionality.
+ *
+ * @param {PadInteractionProps} props - The props for the hook.
+ * @returns {object} An object containing state and handlers for pad interactions.
+ */
 export const usePadInteraction = ({
   appState,
   audioManager,

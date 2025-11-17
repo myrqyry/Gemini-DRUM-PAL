@@ -16,6 +16,14 @@ import { toyConfig } from '@/config/toy.config';
 import { soundEngine } from '@/services/audioService';
 import { parseKitFromUrl } from '@/utils/urlHelpers';
 
+/**
+ * @component DrumPal
+ * @description The main component for the DrumPal toy.
+ * This component integrates all the UI components and custom hooks to create the interactive drum machine experience.
+ * It manages the overall layout and state of the toy, passing down props to child components.
+ *
+ * @returns {React.FC} A component that renders the DrumPal toy.
+ */
 export const DrumPal: React.FC = () => {
   const initialPads = parseKitFromUrl() || toyConfig.initialPads;
   const toy = useToy(toyConfig, soundEngine, initialPads);

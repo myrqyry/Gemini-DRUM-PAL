@@ -1,6 +1,16 @@
 import React from 'react';
 import Metronome from '@/components/common/Metronome';
 
+/**
+ * @interface MetronomeControlsProps
+ * @description Defines the props for the MetronomeControls component.
+ * @property {boolean} isPoweredOn - Indicates if the main device is powered on.
+ * @property {boolean} isMetronomeOn - Indicates if the metronome is currently active.
+ * @property {number} bpm - The current beats per minute setting of the metronome.
+ * @property {boolean} isTicking - Indicates if the metronome is currently producing a tick sound.
+ * @property {(isOn: boolean) => void} setIsMetronomeOn - Callback to toggle the metronome on or off.
+ * @property {(bpm: number) => void} setBpm - Callback to set the metronome's beats per minute.
+ */
 interface MetronomeControlsProps {
   isPoweredOn: boolean;
   isMetronomeOn: boolean;
@@ -10,6 +20,13 @@ interface MetronomeControlsProps {
   setBpm: (bpm: number) => void;
 }
 
+/**
+ * A React functional component that provides controls for the metronome.
+ * It includes a toggle button, a BPM slider, and a visual indicator for the metronome's tick.
+ *
+ * @param {MetronomeControlsProps} props - The props for the component.
+ * @returns {React.FC} A component that renders the metronome controls.
+ */
 const MetronomeControls: React.FC<MetronomeControlsProps> = React.memo(({
   isPoweredOn,
   isMetronomeOn,

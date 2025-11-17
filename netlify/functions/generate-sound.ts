@@ -3,6 +3,16 @@ import { GoogleGenerativeAI } from '@google/genai';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { ToneJsSoundConfigSchema } from '../../src/services/geminiSchema';
 
+/**
+ * @type {Handler}
+ * @description The Netlify serverless function for generating sound configurations.
+ * This function acts as a secure backend proxy to the Google Gemini API.
+ * It takes a user prompt, sends it to the Gemini API with a system prompt tailored for Tone.js sound generation,
+ * and returns the resulting sound configuration.
+ *
+ * @param {import('@netlify/functions').HandlerEvent} event - The Netlify function event object.
+ * @returns {Promise<import('@netlify/functions').HandlerResponse>} A promise that resolves to a Netlify function response.
+ */
 const handler: Handler = async (event) => {
   // Only allow POST requests
   if (event.httpMethod !== 'POST') {

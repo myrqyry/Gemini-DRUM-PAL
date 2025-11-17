@@ -1,12 +1,20 @@
 import { useReducer } from 'react';
+import { PadConfig } from '../types';
 import { WELCOME_MESSAGE } from '../../constants';
 
+/**
+ * @interface ToyState
+ * @description Defines the shape of the toy's state, including power, mode, UI, audio, and customization settings.
+ */
 interface ToyState {
+  /** The power state of the toy. */
   power: {
     level: number; // 0-100
     status: 'OFF' | 'BOOTING' | 'ON';
   };
+  /** The current operational mode of the toy. */
   mode: 'IDLE' | 'MENU' | 'EDITING' | 'RECORDING' | 'GENERATING' | 'ERROR' | 'STICKER_PROMPT';
+  /** The state of the user interface elements. */
   ui: {
     lcdMessage: string;
     selectedPadId: string | null;
@@ -15,18 +23,22 @@ interface ToyState {
     promptInputValue: string;
     stickerUrlInput: string;
   };
+  /** The state of the audio settings. */
   audio: {
     bpm: number;
     isMetronomeOn: boolean;
     isToyModeEnabled: boolean;
   };
+  /** The state of the customization options. */
   customization: {
     stickerRotation: number;
     stickerScale: number;
     soundModel: 'DEFAULT' | 'EXPERIMENTAL';
     isWellLovedEnabled: boolean;
   };
+  /** The history of pad configurations for undo/redo functionality. */
   history: PadConfig[][];
+  /** The current index in the history. */
   historyIndex: number;
 }
 
@@ -48,6 +60,10 @@ type ToyAction =
   | { type: 'UPDATE_CUSTOMIZATION'; customization: Partial<ToyState['customization']> }
   | { type: 'SET_ERROR'; message: string };
 
+/**
+ * @const {ToyState} initialToyState
+ * @description The initial state of the toy when the application starts.
+ */
 const initialToyState: ToyState = {
   power: {
     level: 100,
@@ -77,6 +93,15 @@ const initialToyState: ToyState = {
   historyIndex: 0,
 };
 
+/**
+ * @function toyStateReducer
+ * @description A reducer function to manage state transitions for the toy.
+ * It takes the current state and an action, and returns the new state.
+ *
+ * @param {ToyState} state - The current state.
+ * @param {ToyAction} action - The action to be performed.
+ * @returns {ToyState} The new state.
+ */
 function toyStateReducer(state: ToyState, action: ToyAction): ToyState {
   switch (action.type) {
     case 'POWER_ON':
@@ -139,6 +164,16 @@ function toyStateReducer(state: ToyState, action: ToyAction): ToyState {
   }
 }
 
+/**
+ * @function useToyState
+ * @description A custom hook that provides a state management solution for the toy using a reducer.
+ * It returns the current state and a set of action dispatchers to update the state.
+ *
+ * @returns {{
+ *   state: ToyState,
+ *   actions: object
+ * }} An object containing the current state and an object with all the action dispatchers.
+ */
 export function useToyState() {
   const [state, dispatch] = useReducer(toyStateReducer, initialToyState);
 

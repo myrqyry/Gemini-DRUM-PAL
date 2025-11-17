@@ -1,10 +1,22 @@
 import React from 'react';
 
+/**
+ * @interface DeadPixel
+ * @description Defines the structure for a single dead pixel object.
+ * @property {number} id - A unique identifier for the pixel.
+ * @property {React.CSSProperties} style - The CSS properties to be applied to the pixel element.
+ */
 interface DeadPixel {
   id: number;
   style: React.CSSProperties;
 }
 
+/**
+ * A React functional component that creates an overlay with randomly positioned "dead" pixels
+ * to simulate an old LCD screen effect.
+ *
+ * @returns {React.FC} A component that renders the dead pixels overlay.
+ */
 const DeadPixelsOverlay: React.FC = () => {
   const [pixels, setPixels] = React.useState<DeadPixel[]>([]);
 

@@ -1,10 +1,23 @@
 import React from 'react';
 
+/**
+ * @interface KeyboardShortcutsOverlayProps
+ * @description Defines the props for the KeyboardShortcutsOverlay component.
+ * @property {boolean} isVisible - Determines whether the overlay is visible.
+ * @property {() => void} onClose - Function to call when the overlay should be closed.
+ */
 interface KeyboardShortcutsOverlayProps {
   isVisible: boolean;
   onClose: () => void;
 }
 
+/**
+ * @const {Array<Object>} KEYBOARD_MAP
+ * @description An array of objects that maps keyboard keys to their corresponding drum pad names.
+ * This is used to display the keyboard shortcuts in the overlay.
+ * @property {string} key - The keyboard key.
+ * @property {string} pad - The name of the drum pad.
+ */
 const KEYBOARD_MAP = [
   { key: 'Q', pad: 'KICK' },
   { key: 'W', pad: 'SNARE' },
@@ -16,6 +29,12 @@ const KEYBOARD_MAP = [
   { key: 'X', pad: 'FX' },
 ];
 
+/**
+ * A React functional component that displays an overlay with keyboard shortcuts.
+ *
+ * @param {KeyboardShortcutsOverlayProps} props - The props for the component.
+ * @returns {React.FC} A component that renders the keyboard shortcuts overlay.
+ */
 export const KeyboardShortcutsOverlay: React.FC<KeyboardShortcutsOverlayProps> = ({
   isVisible,
   onClose,

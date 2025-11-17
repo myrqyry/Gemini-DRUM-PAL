@@ -1,7 +1,26 @@
 import React from 'react';
 
+/**
+ * Renders a single circuit trace.
+ * @param {object} props - The component props.
+ * @param {string} props.className - The CSS classes to apply to the trace.
+ * @returns {React.FC} A Trace component.
+ */
 const Trace = ({ className }: { className: string }) => <div className={`absolute bg-green-900/40 ${className}`} />;
+/**
+ * Renders a computer chip.
+ * @param {object} props - The component props.
+ * @param {string} props.className - The CSS classes to apply to the chip.
+ * @param {React.ReactNode} [props.children] - Optional children to render inside the chip.
+ * @returns {React.FC} A Chip component.
+ */
 const Chip = ({ className, children }: { className: string; children?: React.ReactNode }) => <div className={`absolute bg-black/80 border border-gray-900/80 rounded-sm flex items-center justify-center ${className}`}>{children}</div>;
+/**
+ * Renders a resistor component.
+ * @param {object} props - The component props.
+ * @param {string} props.className - The CSS classes to apply to the resistor.
+ * @returns {React.FC} A Resistor component.
+ */
 const Resistor = ({ className }: { className: string }) => (
     <div className={`absolute flex items-center justify-around w-4 h-[6px] rounded-sm bg-stone-500/50 ${className}`}>
         <div className="w-[1px] h-full bg-yellow-600/70"></div>
@@ -9,9 +28,27 @@ const Resistor = ({ className }: { className: string }) => (
         <div className="w-[1px] h-full bg-blue-600/70"></div>
     </div>
 );
+/**
+ * Renders a capacitor component.
+ * @param {object} props - The component props.
+ * @param {string} props.className - The CSS classes to apply to the capacitor.
+ * @returns {React.FC} A Capacitor component.
+ */
 const Capacitor = ({ className }: { className: string }) => <div className={`absolute rounded-full bg-orange-700/80 border border-black/50 ${className}`} />;
+/**
+ * Renders a solder pad.
+ * @param {object} props - The component props.
+ * @param {string} props.className - The CSS classes to apply to the solder pad.
+ * @returns {React.FC} A SolderPad component.
+ */
 const SolderPad = ({ className }: { className: string }) => <div className={`absolute rounded-full bg-gray-500/50 ${className}`} />;
 
+/**
+ * A React functional component that renders a decorative circuit board background.
+ * This component is purely for visual effect and does not have any interactive functionality.
+ *
+ * @returns {React.FC} A component that renders the circuit board.
+ */
 const CircuitBoard = () => {
   return (
     // Positioned in the lower part of the device

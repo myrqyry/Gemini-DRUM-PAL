@@ -16,6 +16,18 @@ import { WELCOME_MESSAGE, METRONOME_TICK_CONFIG, GEMINI_MODEL_NAME, GEMINI_MODEL
 import { ToyConfig, SoundEngine } from '@/types/toyTypes';
 import { PadConfig } from '@/types';
 
+/**
+ * @function useToy
+ * @description The primary custom hook that encapsulates the entire logic for the toy.
+ * It integrates various other hooks for state management, audio, kits, and customization.
+ * This hook is responsible for handling user interactions, managing the toy's state machine,
+ * and coordinating sound generation and playback.
+ *
+ * @param {ToyConfig} config - The main configuration object for the toy.
+ * @param {SoundEngine} soundEngine - The sound engine instance for playing audio.
+ * @param {PadConfig[]} initialPads - The initial configuration of the drum pads.
+ * @returns {object} An extensive object containing the toy's complete state, actions, and event handlers.
+ */
 export const useToy = (config: ToyConfig, soundEngine: SoundEngine, initialPads: PadConfig[]) => {
   const { state, actions } = useToyState();
   const { power, mode, ui, audio, customization } = state;
