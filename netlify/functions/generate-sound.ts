@@ -1,88 +1,85 @@
 import { Handler } from '@netlify/functions';
-import { GoogleGenAI } from '@google/genai';
-import { TONE_JS_SOUND_SCHEMA, TONE_JS_SOUND_JSON_SCHEMA } from '../../src/services/geminiSchema';
-
-const API_KEY = process.env.GEMINI_API_KEY;
-
-if (!API_KEY) {
-  throw new Error("API_KEY for Gemini is not set in environment variables.");
-}
-
-const ai = new GoogleGenAI({ apiKey: API_KEY });
-
-const PROMPT_PREFIX = `
-You are an expert sound designer creating configurations for Tone.js for a drum machine.
-`;
-
-const PROMPT_EXAMPLES = `
-Here are some examples:
-
-User prompt: A deep, punchy kick drum sound. 808 style.
-{
-  "instrument": "MembraneSynth",
-  "options": {
-    "pitchDecay": 0.05,
-    "octaves": 10,
-    "oscillator": { "type": "sine" },
-    "envelope": { "attack": 0.001, "decay": 0.4, "sustain": 0.01, "release": 1.4, "attackCurve": "exponential" }
-  }
-}
-
-User prompt: A crisp, snappy snare drum with a short burst of white noise.
-{
-  "instrument": "NoiseSynth",
-  "options": {
-    "noise": { "type": "white" },
-    "envelope": { "attack": 0.001, "decay": 0.1, "sustain": 0 }
-  }
-}
-`;
+import { GoogleGenerativeAI } from '@google/genai';
+import { zodToJsonSchema } from 'zod-to-json-schema';
+import { ToneJsSoundConfigSchema } from '../../src/services/geminiSchema';
 
 const handler: Handler = async (event) => {
+  // Only allow POST requests
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
-      body: JSON.stringify({ message: 'Method Not Allowed' }),
+      body: JSON.stringify({ error: 'Method Not Allowed' }),
     };
   }
 
-  try {
-    const { prompt, model } = JSON.parse(event.body || '{}');
+  // CORS headers
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Content-Type': 'application/json',
+  };
 
-    if (!prompt) {
+  // Handle preflight
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 200, headers, body: '' };
+  }
+
+  try {
+    // Validate API key
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
       return {
-        statusCode: 400,
-        body: JSON.stringify({ message: 'Prompt is required' }),
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({
+           error: 'Server configuration error: GEMINI_API_KEY not set'
+         }),
       };
     }
 
-    const fullPrompt = `${PROMPT_PREFIX}\n${PROMPT_EXAMPLES}\nGenerate a JSON object for the following sound description:\n${prompt}`;
+    // Parse request body
+    const { prompt, model = 'gemini-2.0-flash-exp' } = JSON.parse(event.body || '{}');
 
-    const geminiModel = ai.getGenerativeModel({
-      model: model,
+    if (!prompt || typeof prompt !== 'string') {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: 'Invalid or missing prompt' }),
+      };
+    }
+
+    // Initialize Gemini
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const generativeModel = genAI.getGenerativeModel({
+      model,
       generationConfig: {
-        responseMimeType: "application/json",
-        responseSchema: TONE_JS_SOUND_JSON_SCHEMA,
-        temperature: 0.7,
-        topP: 0.95,
-        topK: 50,
+        responseMimeType: 'application/json',
+        responseSchema: zodToJsonSchema(ToneJsSoundConfigSchema) as any,
       },
     });
 
-    const result = await geminiModel.generateContent(fullPrompt);
-    const response = await result.response;
-    const soundConfig = TONE_JS_SOUND_SCHEMA.parse(JSON.parse(response.text()));
+    // System prompt for drum sound generation
+    const systemPrompt = `You are an expert at creating drum sounds using Tone.js synthesis parameters. Generate a ToneJsSoundConfig JSON that will produce a convincing ${prompt} drum sound.  Guidelines: - Use appropriate instrument types: MetalSynth for cymbals, MembraneSynth for drums, NoiseSynth for hi-hats - Set realistic frequency ranges: kicks (40-100Hz), snares (150-250Hz), toms (80-200Hz), hi-hats/cymbals (5000-15000Hz) - Configure envelope (attack, decay, sustain, release) for realistic drum hits - Add effects like reverb, distortion, or filtering when appropriate - Keep sounds punchy and percussive`;
 
+    // Generate sound config
+    const result = await generativeModel.generateContent(systemPrompt);
+    const response = result.response;
+    const soundConfig = JSON.parse(response.text());
 
     return {
       statusCode: 200,
+      headers,
       body: JSON.stringify(soundConfig),
     };
   } catch (error) {
     console.error('Error generating sound:', error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ message: 'Error generating sound' }),
+      headers,
+      body: JSON.stringify({
+         error: 'Failed to generate sound configuration',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      }),
     };
   }
 };
