@@ -1,9 +1,20 @@
 import React from 'react';
 
+/**
+ * @interface ToySelectorProps
+ * @description Defines the props for the ToySelector component.
+ * @property {(toy: string) => void} onSelectToy - Callback function to be invoked when a toy is selected.
+ */
 interface ToySelectorProps {
   onSelectToy: (toy: string) => void;
 }
 
+/**
+ * A React functional component that allows the user to select a toy.
+ *
+ * @param {ToySelectorProps} props - The props for the component.
+ * @returns {React.FC} A component that renders the toy selector.
+ */
 const ToySelector: React.FC<ToySelectorProps> = ({ onSelectToy }) => {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen">

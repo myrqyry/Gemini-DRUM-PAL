@@ -1,3 +1,13 @@
+/**
+ * @class AppError
+ * @extends Error
+ * @description A custom error class for handling application-specific errors.
+ * It includes an error code and a flag to indicate if the error is recoverable.
+ *
+ * @param {string} message - The error message.
+ * @param {string} code - A unique code for the error.
+ * @param {boolean} [recoverable=true] - A flag indicating if the application can recover from the error.
+ */
 export class AppError extends Error {
   constructor(
     message: string,
@@ -9,6 +19,13 @@ export class AppError extends Error {
   }
 }
 
+/**
+ * Creates a new error handler function for a specific context.
+ * The returned function takes an unknown error and returns a standardized `AppError` object.
+ *
+ * @param {string} context - The context in which the error occurred (e.g., 'sound generation').
+ * @returns {(error: unknown) => AppError} A function that handles errors for the specified context.
+ */
 export const createErrorHandler = (context: string) => {
   return (error: unknown): AppError => {
     if (error instanceof AppError) return error;

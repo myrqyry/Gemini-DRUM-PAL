@@ -6,10 +6,19 @@ import { ToneJsSoundConfig, ToneJsEffectConfig } from '../types';
 let audioInitialized = false;
 let initializationPromise: Promise<boolean> | null = null;
 
+/**
+ * Gets the current state of the Tone.js AudioContext.
+ * @returns {AudioContextState | null} The state of the AudioContext, or null if it doesn't exist.
+ */
 export const getAudioContextState = (): AudioContextState | null => {
   return Tone.context?.state || null;
 };
 
+/**
+ * Initializes the Tone.js AudioContext. This must be called in response to a user gesture.
+ * It uses a promise to handle concurrent calls and ensure initialization only happens once.
+ * @returns {Promise<boolean>} A promise that resolves to true if the AudioContext is successfully started, and false otherwise.
+ */
 export const initializeAudio = async (): Promise<boolean> => {
   if (audioInitialized || Tone.context.state === 'running') {
     audioInitialized = true;
@@ -46,6 +55,12 @@ type CreatableToneInstrument =
 
 const instrumentCache = new Map<string, CreatableToneInstrument>();
 
+/**
+ * Creates a Tone.js instrument based on the provided configuration.
+ * It uses a cache to avoid recreating instruments with the same configuration.
+ * @param {ToneJsSoundConfig} config - The configuration for the instrument.
+ * @returns {CreatableToneInstrument | null} The created Tone.js instrument, or null if the type is unsupported.
+ */
 const createInstrument = (config: ToneJsSoundConfig): CreatableToneInstrument | null => {
   const cacheKey = `${config.instrument}_${JSON.stringify(config.options)}`;
 
@@ -90,6 +105,11 @@ const createInstrument = (config: ToneJsSoundConfig): CreatableToneInstrument | 
   return instrument;
 };
 
+/**
+ * Creates a Tone.js effect based on the provided configuration.
+ * @param {ToneJsEffectConfig} effectConfig - The configuration for the effect.
+ * @returns {Tone.ToneAudioNode | null} The created Tone.js effect node, or null if the type is unsupported.
+ */
 const createEffect = (effectConfig: ToneJsEffectConfig): Tone.ToneAudioNode | null => {
   const options = effectConfig.options || {};
   switch (effectConfig.type) {
@@ -117,6 +137,11 @@ const createEffect = (effectConfig: ToneJsEffectConfig): Tone.ToneAudioNode | nu
   }
 };
 
+/**
+ * Creates a special audio effects chain that simulates the sound of a toy speaker.
+ * This chain includes a bit crusher, a bandpass filter, distortion, and pink noise to add hiss.
+ * @returns {{input: Tone.BitCrusher, output: Tone.Distortion, effects: Tone.ToneAudioNode[]}} An object containing the input and output nodes of the chain, and an array of all effects in the chain.
+ */
 const createToySpeakerChain = () => {
   const bitCrusher = new Tone.BitCrusher(8);
   const filter = new Tone.Filter({
@@ -141,6 +166,19 @@ const createToySpeakerChain = () => {
   };
 };
 
+/**
+ * Plays a sound based on the provided configuration.
+ * It handles instrument and effect creation, audio routing, and sound triggering.
+ * It also includes logic for the toy speaker effect and battery level simulation.
+ *
+ * @param {ToneJsSoundConfig | undefined} soundConfigA - The primary sound configuration.
+ * @param {React.MutableRefObject<Set<NodeJS.Timeout>>} timeoutsRef - A ref to a set of timeouts for garbage collection.
+ * @param {ToneJsSoundConfig | undefined} [soundConfigB] - An optional second sound configuration for morphing.
+ * @param {number} [morphValue=0] - The morphing value between soundConfigA and soundConfigB.
+ * @param {boolean} [isToyModeEnabled=false] - A flag to enable the toy speaker effect.
+ * @param {number} [batteryLevel=100] - The current battery level, used for sound degradation effects.
+ * @returns {Promise<void>} A promise that resolves when the sound has been triggered.
+ */
 export const playSound = async (
   soundConfigA: ToneJsSoundConfig | undefined,
   timeoutsRef: React.MutableRefObject<Set<NodeJS.Timeout>>,
@@ -249,6 +287,14 @@ export const playSound = async (
   timeoutsRef?.current.add(timeoutId);
 };
 
+/**
+ * Interpolates between two sound configurations based on a morph value.
+ * This is used to create smooth transitions between two different sounds.
+ * @param {ToneJsSoundConfig} configA - The first sound configuration.
+ * @param {ToneJsSoundConfig} configB - The second sound configuration.
+ * @param {number} morphValue - The morph value (0-1), where 0 is 100% configA and 1 is 100% configB.
+ * @returns {ToneJsSoundConfig} The interpolated sound configuration.
+ */
 const interpolate = (
   configA: ToneJsSoundConfig,
   configB: ToneJsSoundConfig,
@@ -293,6 +339,15 @@ const interpolate = (
   return interpolatedConfig;
 };
 
+/**
+ * @const {object} soundEngine
+ * @description An object that encapsulates the main audio service functions.
+ * This provides a clean interface for other parts of the application to interact with the audio system.
+ *
+ * @property {() => Promise<boolean>} initializeAudio - A function to initialize the audio context.
+ * @property {typeof playSound} playSound - A function to play sounds.
+ * @property {() => AudioContextState | null} getAudioContextState - A function to get the current state of the audio context.
+ */
 export const soundEngine = {
   initializeAudio,
   playSound,

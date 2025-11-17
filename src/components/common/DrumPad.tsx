@@ -1,7 +1,19 @@
 import React from 'react';
-import { PadConfig } from '../types';
+import { PadConfig } from '../../types';
 import Spinner from './Spinner';
 
+/**
+ * @interface DrumPadProps
+ * @description Defines the props for the DrumPad component.
+ * @property {PadConfig} padConfig - The configuration object for the drum pad.
+ * @property {(padId: string) => void} onClick - Callback function to be invoked when the drum pad is clicked.
+ * @property {boolean} [isSelected] - Optional flag to indicate if the drum pad is currently selected.
+ * @property {boolean} [disabled] - Optional flag to disable the drum pad.
+ * @property {boolean} [isTransparent] - Optional flag for transparent mode styling.
+ * @property {string} [textColor] - Optional CSS class for the text color.
+ * @property {string} [textInsetClass] - Optional CSS class for the inset text effect.
+ * @property {boolean} [isKeyPressed] - Optional flag to indicate if the corresponding key is pressed.
+ */
 interface DrumPadProps {
   padConfig: PadConfig;
   onClick: (padId: string) => void;
@@ -13,6 +25,12 @@ interface DrumPadProps {
   isKeyPressed?: boolean;
 }
 
+/**
+ * A React functional component that renders a single drum pad.
+ *
+ * @param {DrumPadProps} props - The props for the component.
+ * @returns {React.FC} A component that renders a drum pad button and its label.
+ */
 const DrumPad: React.FC<DrumPadProps> = ({
   padConfig,
   onClick,

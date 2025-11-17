@@ -1,10 +1,23 @@
 import { PadConfig } from '../types';
 import { INITIAL_PADS } from '../constants';
 
+/**
+ * Checks if a string is a valid base64 encoded string.
+ *
+ * @param {string} str - The string to be validated.
+ * @returns {boolean} True if the string is valid base64, false otherwise.
+ */
 export const isValidBase64 = (str: string): boolean => {
   return /^[A-Za-z0-9+/=]+$/.test(str);
 };
 
+/**
+ * Checks if a string is a valid image URL.
+ * It verifies the protocol and file extension.
+ *
+ * @param {string} url - The URL to be validated.
+ * @returns {boolean} True if the URL is a valid image URL, false otherwise.
+ */
 export const isValidImageUrl = (url: string): boolean => {
   try {
     const parsed = new URL(url);
@@ -15,6 +28,14 @@ export const isValidImageUrl = (url: string): boolean => {
   }
 };
 
+/**
+ * @interface ParsedUrlData
+ * @description Defines the structure of the data parsed from a shareable URL.
+ * @property {PadConfig[]} pads - The configuration of the drum pads.
+ * @property {string} shellColor - The color of the shell.
+ * @property {boolean} isTransparent - The transparency setting of the shell.
+ * @property {string | null} stickerUrl - The URL of the sticker.
+ */
 interface ParsedUrlData {
   pads: PadConfig[];
   shellColor: string;
@@ -22,6 +43,13 @@ interface ParsedUrlData {
   stickerUrl: string | null;
 }
 
+/**
+ * Parses a drum kit and customization data from the URL hash.
+ * The data in the hash is expected to be a base64 encoded JSON string.
+ * This function handles decoding, parsing, and validating the data.
+ *
+ * @returns {ParsedUrlData | null} The parsed data, or null if the hash is missing or invalid.
+ */
 export const parseKitFromUrl = (): ParsedUrlData | null => {
   if (typeof window === 'undefined' || !window.location.hash) {
     return null;

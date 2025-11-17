@@ -2,6 +2,19 @@ import { useState, useMemo, useCallback } from 'react';
 import { THEMES } from '../themes';
 import { PRESET_STICKERS } from '../constants';
 
+/**
+ * @function useShellCustomization
+ * @description A custom hook to manage the customization of the application's shell, including theme, transparency, and stickers.
+ * This hook provides state and functions for cycling through themes, setting a specific theme, and deriving shell properties from the current theme.
+ *
+ * @returns {{
+ *   shellColor: string,
+ *   isTransparent: boolean,
+ *   stickerUrl: string | null,
+ *   handleCycleTheme: () => void,
+ *   handleSetTheme: (themeName: string) => void
+ * }} An object containing the current shell customization state and functions to update it.
+ */
 export const useShellCustomization = () => {
   const [themeIndex, setThemeIndex] = useState(0);
 

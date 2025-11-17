@@ -1,3 +1,7 @@
+/**
+ * @class SecurityUtils
+ * @description Provides utility functions for security-related tasks such as URL sanitization and HTML escaping.
+ */
 export class SecurityUtils {
   private static readonly ALLOWED_HOSTS = [
     'images.unsplash.com',
@@ -7,6 +11,13 @@ export class SecurityUtils {
 
   private static readonly MAX_URL_LENGTH = 2048;
 
+  /**
+   * Sanitizes a URL to ensure it is safe to use.
+   * This method checks for allowed hosts, URL length, HTTPS protocol, and valid image file extensions.
+   *
+   * @param {string} url - The URL to be sanitized.
+   * @returns {string | null} The sanitized URL, or null if the URL is invalid.
+   */
   static sanitizeUrl(url: string): string | null {
     try {
       const trimmed = url.trim();
@@ -38,6 +49,12 @@ export class SecurityUtils {
     }
   }
 
+  /**
+   * Escapes HTML special characters in a string to prevent XSS attacks.
+   *
+   * @param {string} text - The string to be escaped.
+   * @returns {string} The escaped string.
+   */
   static escapeHtml(text: string): string {
     const div = document.createElement('div');
     div.textContent = text;

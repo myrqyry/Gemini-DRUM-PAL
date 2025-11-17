@@ -1,5 +1,11 @@
-import { PadConfig } from './types';
+import { PadConfig } from '../types';
 
+/**
+ * @const {PadConfig[]} INITIAL_PADS
+ * @description The initial configuration for the drum pads.
+ * Each pad is defined with an ID, name, color, sound prompt, and initial state.
+ * This configuration is used to set up the drum machine when it first loads.
+ */
 export const INITIAL_PADS: PadConfig[] = [
   {
     id: 'kick',
@@ -67,6 +73,11 @@ export const INITIAL_PADS: PadConfig[] = [
   },
 ];
 
+/**
+ * @const {object[]} SHELL_COLORS
+ * @description An array of objects defining the available shell colors and their associated styles.
+ * Each color object includes properties for solid and transparent backgrounds, text color, border color, and a flag for light or dark themes.
+ */
 export const SHELL_COLORS = [
     { name: 'YELLOW', solidClass: 'bg-yellow-400', transparentRgba: 'rgba(251, 191, 36, 0.4)', textColor: 'text-yellow-300', borderColor: 'border-yellow-300', bgColor: 'bg-yellow-400/20', isLight: true },
     { name: 'RED', solidClass: 'bg-red-500', transparentRgba: 'rgba(239, 68, 68, 0.4)', textColor: 'text-red-400', borderColor: 'border-red-400', bgColor: 'bg-red-500/20', isLight: false },
@@ -77,13 +88,22 @@ export const SHELL_COLORS = [
     { name: 'STONE', solidClass: 'bg-stone-100', transparentRgba: 'rgba(245, 245, 244, 0.4)', textColor: 'text-stone-400', borderColor: 'border-stone-400', bgColor: 'bg-stone-400/20', isLight: true },
 ];
 
+/**
+ * @const {object} PRESET_STICKERS
+ * @description A collection of URLs for preset sticker sets.
+ * Each key represents a sticker theme, and the value is the URL to the sticker image.
+ */
 export const PRESET_STICKERS = {
   TECH: 'https://storage.googleapis.com/gemini-drum-pal/stickers/tech_sticker_set_1.png',
   BIO: 'https://storage.googleapis.com/gemini-drum-pal/stickers/bio_sticker_set_1.png',
   KAWAII: 'https://storage.googleapis.com/gemini-drum-pal/stickers/kawaii_sticker_set_1.png',
 };
 
-// Defines a "cuter" 3-column layout for the pads
+/**
+ * @const {(string|null)[]} PAD_LAYOUT_ORDER
+ * @description Defines the visual layout of the drum pads in a 3-column grid.
+ * `null` values represent empty spaces in the grid.
+ */
 export const PAD_LAYOUT_ORDER = [
     null, 'kick', null,
     'snare', 'tom1', 'clap',
@@ -92,6 +112,11 @@ export const PAD_LAYOUT_ORDER = [
 ];
 
 
+/**
+ * @const {object} PAD_ANIMATION_MAP
+ * @description A mapping of pad IDs to their corresponding animation component names.
+ * This is used to dynamically render the correct animation when a pad is triggered.
+ */
 export const PAD_ANIMATION_MAP: { [key: string]: string } = {
     kick: 'Kick',
     snare: 'Snare',
@@ -103,12 +128,19 @@ export const PAD_ANIMATION_MAP: { [key: string]: string } = {
     fx1: 'Fx',
 };
 
-
+/** @const {string} GEMINI_MODEL_NAME The default model name for the Gemini API. */
 export const GEMINI_MODEL_NAME = 'gemini-1.5-flash';
+/** @const {string} GEMINI_MODEL_NAME_EXPERIMENTAL The experimental model name for the Gemini API. */
 export const GEMINI_MODEL_NAME_EXPERIMENTAL = 'gemini-1.5-pro';
 
+/** @const {string} WELCOME_MESSAGE The welcome message displayed on the LCD screen. */
 export const WELCOME_MESSAGE = 'GEMINI\nDRUM-PAL';
 
+/**
+ * @const {object} METRONOME_TICK_CONFIG
+ * @description The Tone.js configuration for the metronome tick sound.
+ * This defines the synthesizer and envelope used to create the tick sound.
+ */
 export const METRONOME_TICK_CONFIG = {
   instrument: 'Synth',
   options: {

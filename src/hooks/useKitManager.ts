@@ -2,6 +2,22 @@ import { useState, useEffect } from 'react';
 import { PadConfig } from '../types';
 import { KitService } from '../services/kitService';
 
+/**
+ * @function useKitManager
+ * @description A custom hook for managing drum kits.
+ * This hook handles the state and logic for pads, including saving, loading, and deleting kits.
+ * It interacts with `KitService` to persist kit data.
+ *
+ * @param {PadConfig[]} initialPads - The initial configuration of the drum pads.
+ * @returns {{
+ *   pads: PadConfig[],
+ *   setPads: React.Dispatch<React.SetStateAction<PadConfig[]>>,
+ *   savedKits: Record<string, PadConfig[]>,
+ *   handleSaveKit: (name: string) => void,
+ *   handleLoadKit: (kitName: string) => void,
+ *   handleDeleteKit: (name: string) => void
+ * }} An object containing the current pads state, functions to manage kits, and the list of saved kits.
+ */
 export const useKitManager = (initialPads: PadConfig[]) => {
   const [pads, setPads] = useState<PadConfig[]>(initialPads);
   const [savedKits, setSavedKits] = useState<Record<string, PadConfig[]>>({});

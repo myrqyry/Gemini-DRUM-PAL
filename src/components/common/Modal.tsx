@@ -1,6 +1,14 @@
 
 import React from 'react';
 
+/**
+ * @interface ModalProps
+ * @description Defines the props for the Modal component.
+ * @property {boolean} isOpen - Controls whether the modal is open or closed.
+ * @property {() => void} onClose - Callback function to be invoked when the modal is requested to be closed.
+ * @property {string} title - The title of the modal, displayed at the top.
+ * @property {React.ReactNode} children - The content to be displayed inside the modal.
+ */
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -8,6 +16,13 @@ interface ModalProps {
   children: React.ReactNode;
 }
 
+/**
+ * A React functional component that renders a generic modal dialog.
+ * The modal includes a backdrop, a close button, and a title.
+ *
+ * @param {ModalProps} props - The props for the component.
+ * @returns {React.FC | null} A component that renders the modal, or null if the modal is not open.
+ */
 const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
   if (!isOpen) {
     return null;

@@ -1,8 +1,29 @@
 import { useState, useRef, useCallback } from 'react';
 import { RecordedNote, RecordingSequence, validateRecordedNote } from '../types/recording';
 
+/**
+ * @typedef {'RECORDING' | 'PLAYING' | 'STOPPED'} RecordingState
+ * @description Represents the state of the recording functionality.
+ */
 type RecordingState = 'RECORDING' | 'PLAYING' | 'STOPPED';
 
+/**
+ * @function useRecording
+ * @description A custom hook to manage recording and playback of pad sequences.
+ * This hook provides functionalities to start and stop recording, play back the recorded sequence, and export it.
+ *
+ * @param {(padId: string) => boolean} triggerPad - A callback function to trigger a pad's sound.
+ * @param {number} bpm - The beats per minute, used to calculate playback speed.
+ * @returns {{
+ *   recordingState: RecordingState,
+ *   handleRecord: () => void,
+ *   handlePlay: () => void,
+ *   handleStop: () => void,
+ *   recordNote: (padId: string, velocity?: number) => void,
+ *   recordedSequence: RecordedNote[],
+ *   exportSequence: () => RecordingSequence | null
+ * }} An object containing the recording state and functions to control recording and playback.
+ */
 export const useRecording = (triggerPad: (padId: string) => boolean, bpm: number) => {
   const [recordingState, setRecordingState] = useState<RecordingState>('STOPPED');
   const [recordedSequence, setRecordedSequence] = useState<RecordedNote[]>([]);

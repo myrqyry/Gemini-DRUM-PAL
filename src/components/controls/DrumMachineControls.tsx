@@ -2,22 +2,46 @@ import React from 'react';
 
 import { ToyState } from '../../hooks/useToyState';
 
+/**
+ * @interface DrumMachineControlsProps
+ * @description Defines the props for the DrumMachineControls component.
+ */
 interface DrumMachineControlsProps {
+  /** The current power state of the toy. */
   power: ToyState['power'];
+  /** The current operating mode of the toy. */
   mode: ToyState['mode'];
+  /** The current state of the recording feature. */
   recordingState: string;
+  /** Callback function for the menu button click. */
   handleMenuButtonClick: () => void;
+  /** Callback function for the share kit button click. */
   handleShareKit: () => void;
+  /** Callback function to set the visibility of the kits modal. */
   setIsKitsModalOpen: (isOpen: boolean) => void;
+  /** Callback function to handle recording. */
   handleRecord: () => void;
+  /** Callback function to handle playback. */
   handlePlay: () => void;
+  /** Callback function to stop playback. */
   handleStop: () => void;
+  /** The sequence of recorded notes. */
   recordedSequence: any[];
+  /** Callback function to undo the last action. */
   undo: () => void;
+  /** Callback function to redo the last undone action. */
   redo: () => void;
+  /** Callback function to toggle the toy mode. */
   toggleToyMode: () => void;
 }
 
+/**
+ * A React functional component that renders the main controls for the drum machine.
+ * This includes buttons for menu, share, kits, record, play, stop, undo, redo and toy mode.
+ *
+ * @param {DrumMachineControlsProps} props - The props for the component.
+ * @returns {React.FC} A component that renders the drum machine controls.
+ */
 const DrumMachineControls: React.FC<DrumMachineControlsProps> = React.memo(({
   power,
   mode,
