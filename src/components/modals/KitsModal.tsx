@@ -1,5 +1,5 @@
 import React from 'react';
-import { PadConfig } from '../types';
+import { PadConfig } from '@/types';
 
 interface KitsModalProps {
   isOpen: boolean;

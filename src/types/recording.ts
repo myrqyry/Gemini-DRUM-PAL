@@ -16,10 +16,14 @@ export interface RecordedNote {
  * @description Represents a complete recording, containing a sequence of notes and metadata.
  * @property {RecordedNote[]} notes - An array of the recorded notes.
  * @property {number} bpm - The beats per minute at which the sequence was recorded.
+ */
+export interface RecordingSequence {
   /** The total duration of the recording in milliseconds. */
   duration: number;
   /** The date and time when the recording was created. */
   createdAt: Date;
+  notes: RecordedNote[];
+  bpm: number;
 }
 
 /**
