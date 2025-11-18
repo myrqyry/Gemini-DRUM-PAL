@@ -23,3 +23,30 @@ dist-ssr
 *.sln
 *.sw?
 .env
+### Project build and cache
+coverage/
+.nyc_output/
+.cache/
+.turbo/
+build/
+.parcel-cache/
+.vite/
+
+### TypeScript
+*.tsbuildinfo
+
+### Environment files (local)
+.env.local
+.env.*.local
+.env
+
+### Netlify function compiled outputs
+netlify/functions/*.js
+netlify/functions/*.js.map
+
+### Misc
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+*.tgz
+AGENTS.md
