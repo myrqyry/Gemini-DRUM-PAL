@@ -8,7 +8,7 @@ import React from 'react';
  */
 interface SoundGenerationErrorBoundaryProps {
   children: React.ReactNode;
-  onError: (error: Error) => void;
+  onError?: (error: Error) => void;
 }
 
 /**
@@ -42,7 +42,9 @@ class SoundGenerationErrorBoundary extends React.Component<
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('Sound generation error boundary caught an error:', error, errorInfo);
-    this.props.onError(error);
+    if (typeof this.props.onError === 'function') {
+      this.props.onError(error);
+    }
   }
 
   render() {

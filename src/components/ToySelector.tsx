@@ -1,4 +1,5 @@
 import React from 'react';
+import { useAudioManager } from '@/hooks/useAudioManager';
 
 /**
  * @interface ToySelectorProps
@@ -16,13 +17,22 @@ interface ToySelectorProps {
  * @returns {React.FC} A component that renders the toy selector.
  */
 const ToySelector: React.FC<ToySelectorProps> = ({ onSelectToy }) => {
+  const { initializeAudio } = useAudioManager();
   return (
     <div className="flex flex-col items-center justify-center min-h-screen">
       <h1 className="text-4xl mb-8">Choose Your Toy</h1>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div
           className="p-8 border rounded-lg cursor-pointer hover:bg-gray-800"
-          onClick={() => onSelectToy('DrumPal')}
+          onClick={async () => {
+            // Attempt to initialize audio as this is a user gesture
+            try {
+              await initializeAudio();
+            } catch (e) {
+              // initializeAudio already returns false or logs; swallow any error
+            }
+            onSelectToy('DrumPal');
+          }}
         >
           <h2 className="text-2xl">DrumPal</h2>
           <p>The original 90s drum machine keychain.</p>

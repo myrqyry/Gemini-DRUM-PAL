@@ -20,7 +20,7 @@ Gemini Drum PAL is a web-based application built with React, TypeScript, and Vit
 - **Frontend:** React, TypeScript, Vite, Tailwind CSS
 - **Audio:** `tone.js`
 - **AI:** Google Gemini API
-- **Backend:** Netlify Serverless Functions (for secure API key management)
+ - **Backend:** Local development server (Express) or a production backend of your choice.
 
 ## Getting Started
 
@@ -39,32 +39,28 @@ Gemini Drum PAL is a web-based application built with React, TypeScript, and Vit
 
 2.  **Install dependencies:**
     ```bash
-    npm install
+    pnpm install
     ```
 
-3.  **Set up environment variables:**
+ 3.  **Set up environment variables (development):**
 
-    Create a `.env.local` file in the root of the project and add your Gemini API key:
+     Create a `.env` file in the root of the project and add your Gemini API key:
 
-    ```
-    VITE_GEMINI_API_KEY=your_api_key_here
-    ```
-
-    You will also need to set up the `GEMINI_API_KEY` for the Netlify serverless function. If you are not deploying to Netlify, you can create a `.env` file in the `netlify/functions` directory:
-
-    ```
-    GEMINI_API_KEY=your_api_key_here
-    ```
+     ```
+     VITE_GEMINI_API_KEY=your_api_key_here
+     GEMINI_API_KEY=your_api_key_here
+     ```
 
 ### Running the Development Server
 
-To start the local development server, run the following command:
+To start the local development server and the backend server, run the following commands in separate terminals:
 
 ```bash
-npm run dev
+pnpm run start:server
+pnpm dev
 ```
 
-The application will be available at `http://localhost:5173`.
+The application will be available at `http://localhost:3000` (configured in `vite.config.ts`).
 
 ## How to Use
 
@@ -102,7 +98,7 @@ The project is organized into the following main directories:
     -   `toys/`: The main components for each toy.
     -   `types/`: TypeScript type definitions.
     -   `utils/`: Utility functions.
--   `netlify/`: Contains the Netlify serverless functions.
+-   `server/`: Contains a local Express development backend used for `/api/*` endpoints.
 
 ## Contributing
 

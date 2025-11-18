@@ -2,11 +2,11 @@ import { ToneJsSoundConfig } from '../types';
 import { GEMINI_MODEL_NAME } from '../constants';
 import { AppError } from '@/utils/errorHandling';
 
-const API_ENDPOINT = '/.netlify/functions/generate-sound';
+const API_ENDPOINT = '/api/generate-sound';
 
 /**
  * Fetches a Tone.js sound configuration from the Gemini API based on a user prompt.
- * This function communicates with a Netlify serverless function that acts as a proxy to the Gemini API.
+ * This function communicates with a local backend API under `/api` that proxies to the Gemini API.
  * It handles potential network errors and validates the response from the API.
  *
  * @param {string} userPrompt - The user's description of the desired sound.
@@ -29,7 +29,7 @@ export const getSoundConfigFromPrompt = async (
       const errorBody = await response.text();
       if (response.status === 404) {
         throw new AppError(
-          'Sound generation service not found. Please ensure Netlify functions are deployed.',
+          'Sound generation service not found. Please ensure the backend server is running and available at `/api/generate-sound`.',
           'NETWORK_ERROR'
         );
       }

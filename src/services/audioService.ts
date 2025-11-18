@@ -33,10 +33,13 @@ export const initializeAudio = async (): Promise<boolean> => {
         audioInitialized = true;
         return true;
       } catch (error) {
-        console.error('Failed to start AudioContext:', error);
+        // Do not throw: return false to signal callers that initialization failed.
+        // This prevents uncaught promise rejections when initialization is attempted
+        // programmatically without a user gesture (common in dev environments).
+        console.warn('Failed to start AudioContext:', error);
         audioInitialized = false;
         initializationPromise = null; // Reset for future attempts
-        throw error;
+        return false;
       }
     })();
   }
@@ -199,10 +202,17 @@ export const playSound = async (
 
   if (Tone.context.state !== 'running') {
     console.warn('AudioContext not running. Attempting to initialize.');
-    const started = await initializeAudio();
+    let started;
+    try {
+      started = await initializeAudio();
+    } catch (e) {
+      started = false;
+    }
     if (!started) {
-        alert('Could not initialize audio. Please ensure your browser allows audio playback and try interacting with the page again (e.g. click "Enable Audio").');
-        return;
+      // Avoid popping up blocking alerts during background operations.
+      // Instead, warn and return gracefully — UI should surface a user-facing prompt.
+      console.warn('Audio initialization failed; skipping sound playback until user gesture.');
+      return;
     }
   }
 

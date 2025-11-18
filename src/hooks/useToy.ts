@@ -79,6 +79,7 @@ export const useToy = (config: ToyConfig, soundEngine: SoundEngine, initialPads:
   }, [shellColor, config.shellColors]);
 
   const soundTimeoutsRef = React.useRef<Set<NodeJS.Timeout>>(new Set());
+  const recordNoteRef = React.useRef<((padId: string, velocity?: number) => void) | null>(null);
 
   useEffect(() => {
     return () => {
@@ -94,7 +95,13 @@ export const useToy = (config: ToyConfig, soundEngine: SoundEngine, initialPads:
     }
 
     const trigger = () => {
-        recordNote(padId);
+        // use ref to avoid TDZ when using recordNote before it's initialized
+        try {
+          recordNoteRef.current?.(padId);
+        } catch (err) {
+          // no-op: recordNote may not be available during initial render
+          console.warn('recordNote not ready', err);
+        }
 
         actions.depleteBattery();
     soundEngine.playSound(pad.toneJsConfig, soundTimeoutsRef, pad.toneJsConfigB, pad.morphValue, isToyModeEnabled, batteryLevel);
@@ -113,9 +120,16 @@ export const useToy = (config: ToyConfig, soundEngine: SoundEngine, initialPads:
     }
 
     return true;
-  }, [pads, setPads, actions, soundEngine, config.animationMap, isWellLovedEnabled, batteryLevel, recordNote, isToyModeEnabled]);
+  }, [pads, setPads, actions, soundEngine, config.animationMap, isWellLovedEnabled, batteryLevel, isToyModeEnabled]);
 
   const { recordingState, handleRecord, handlePlay, handleStop, recordNote, recordedSequence } = useRecording(triggerPad, bpm);
+
+  useEffect(() => {
+    recordNoteRef.current = recordNote;
+    return () => {
+      recordNoteRef.current = null;
+    };
+  }, [recordNote]);
 
   useEffect(() => {
     const storedStickerTransform = localStorage.getItem('stickerTransform');
@@ -376,7 +390,18 @@ export const useToy = (config: ToyConfig, soundEngine: SoundEngine, initialPads:
   useEffect(() => {
     const checkApiKey = async () => {
       try {
-        const response = await fetch('/.netlify/functions/check-api-key');
+        const response = await fetch('/api/check-api-key');
+        if (!response.ok) {
+          console.warn('check-api-key returned non-ok status:', response.status);
+          setIsApiKeyMissing(true);
+          return;
+        }
+        const contentType = response.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+          console.warn('check-api-key did not return JSON (likely dev server).');
+          setIsApiKeyMissing(true);
+          return;
+        }
         const data = await response.json();
         setIsApiKeyMissing(!data.hasApiKey);
       } catch (error) {
@@ -440,3 +465,5 @@ export const useToy = (config: ToyConfig, soundEngine: SoundEngine, initialPads:
     handleToggleEditingSound,
   };
 };
+
+export default useToy;
